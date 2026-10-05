@@ -1,0 +1,138 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>harness</title>
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+<style>#pen{position:fixed;left:-2000px;top:0;width:520px;height:380px}</style>
+</head><body>
+<pre id="results">running…</pre>
+<div id="pen"></div>
+<script type="module">
+import { Stage, THREE } from './js/scene.js';
+import { UI } from './js/ui.js';
+import { LESSONS } from './js/lessons/index.js';
+import { Store } from './js/store.js';
+import {
+  Meter, deriveDecoderKey, vendingKeyFromPhrase, buildCreditToken, decodeToken, tidFromDate, TID_MAX
+} from './js/crypto/sts.js';
+
+const errors = [];
+const realErr = console.error.bind(console);
+console.error = (...a) => { errors.push('console.error: ' + a.map(String).join(' ')); realErr(...a); };
+window.addEventListener('error', e => errors.push('window.onerror: ' + e.message));
+window.addEventListener('unhandledrejection', e => errors.push('unhandled: ' + e.reason));
+
+const pen = document.getElementById('pen');
+const out = [];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+for (const def of LESSONS) {
+  const before = errors.length;
+  const stageEl = document.createElement('div');
+  stageEl.style.cssText = 'width:520px;height:380px';
+  const ctlEl = document.createElement('div');
+  const dataEl = document.createElement('pre');
+  pen.append(stageEl, ctlEl, dataEl);
+
+  let stage = null, note = '';
+  try {
+    stage = new Stage(stageEl, def.stageOpts || {});
+    const ui = new UI(ctlEl, dataEl);
+    def.build({ stage, ui, THREE, showTab(){}, go(){} });
+    await sleep(260);                         // let the render loop turn over
+
+    // exercise every control
+    const buttons = [...ctlEl.querySelectorAll('button')];
+    for (const b of buttons) { b.click(); await sleep(28); }
+
+    const ranges = [...ctlEl.querySelectorAll('input[type=range]')];
+    for (const r of ranges) {
+      for (const v of [r.min, r.max, String((+r.min + +r.max) / 2)]) {
+        r.value = v; r.dispatchEvent(new Event('input')); await sleep(14);
+      }
+    }
+    const texts = [...ctlEl.querySelectorAll('input[type=text],textarea')];
+    for (const t of texts) {
+      for (const v of ['', 'x', '99999999999999999999', 'Zz!']) {
+        t.value = v; t.dispatchEvent(new Event('input')); await sleep(14);
+      }
+    }
+    const selects = [...ctlEl.querySelectorAll('select')];
+    for (const s of selects) { s.dispatchEvent(new Event('change')); await sleep(14); }
+
+    await sleep(340);                         // let queued animations run and fail if they will
+    note = `${buttons.length} buttons, ${ranges.length} sliders, ${texts.length} fields`;
+
+    // The canvas must fill its container exactly at any devicePixelRatio
+    // (run headless with --force-device-scale-factor=1.5 to exercise this).
+    const cr = stage.renderer.domElement.getBoundingClientRect();
+    if (Math.abs(cr.width - stageEl.clientWidth) > 1 || Math.abs(cr.height - stageEl.clientHeight) > 1) {
+      errors.push(`canvas is ${cr.width}×${cr.height} CSS px in a ${stageEl.clientWidth}×${stageEl.clientHeight} container (dpr ${devicePixelRatio})`);
+    }
+  } catch (e) {
+    errors.push(`BUILD THREW in ${def.id}: ${e.message}\n${e.stack}`);
+  }
+  try {
+    const gl = stage?.renderer.getContext();
+    stage?.dispose();
+    if (gl && !gl.isContextLost()) errors.push('WebGL context still alive after dispose()');
+  } catch (e) { errors.push(`dispose ${def.id}: ${e.message}`); }
+  pen.innerHTML = '';
+
+  const mine = errors.slice(before);
+  out.push(`${mine.length ? 'FAIL' : 'ok  '}  ${def.id}  ${def.title}${note ? '  [' + note + ']' : ''}`);
+  mine.forEach(m => out.push('        ' + m.replace(/\n/g, '\n        ')));
+}
+
+/* ── System checks: invariants the lesson smoke test cannot see ─────────── */
+out.push('');
+const check = (name, fn) => {
+  let msg = '';
+  try { msg = fn() || ''; } catch (e) { msg = `threw: ${e.message}`; }
+  if (msg) errors.push(`${name}: ${msg}`);
+  out.push(`${msg ? 'FAIL' : 'ok  '}  ${name}${msg ? '\n        ' + msg : ''}`);
+};
+
+const dk = deriveDecoderKey({ vendingKey: vendingKeyFromPhrase('umeme-master-2024'),
+  drn: '04122334455', sgc: 600321, krn: 1, ti: 7 });
+
+check('base date in force today has TID headroom', () => {
+  const tid = tidFromDate(new Date(), Store.get('baseDate'));
+  if (tid > TID_MAX) return `base ${Store.get('baseDate')} gives TID ${tid} > ${TID_MAX}`;
+});
+
+check('a token built now decodes to the TID it was built with', () => {
+  const tid = tidFromDate(new Date(), Store.get('baseDate'));
+  const back = decodeToken(buildCreditToken({ tid, units: 500, dk }).digits, dk);
+  if (back.tid !== tid) return `built TID ${tid}, decoded ${back.tid}`;
+});
+
+check('out-of-range TID is refused, not wrapped', () => {
+  try { buildCreditToken({ tid: TID_MAX + 1, units: 10, dk }); }
+  catch (e) { return e instanceof RangeError ? '' : `wrong error: ${e.message}`; }
+  return 'buildCreditToken accepted a 25-bit TID';
+});
+
+check('two genuine purchases in the same minute are both accepted', () => {
+  const meter = new Meter({ drn: '04122334455', sgc: 600321, dk, baseDate: Store.get('baseDate') });
+  const now = tidFromDate(new Date(), Store.get('baseDate'));
+  const a = meter.feed(buildCreditToken({ tid: Store.issueTid(now), units: 100, dk }).digits);
+  const b = meter.feed(buildCreditToken({ tid: Store.issueTid(now), units: 100, dk }).digits);
+  if (!a.ok || !b.ok) return `second purchase: ${b.reason || a.reason}`;
+});
+
+check('the Data tab shows typed text literally', () => {
+  const dataEl = document.createElement('pre');
+  new UI(document.createElement('div'), dataEl).data({ message: '<b>x</b> & <img>' });
+  if (!dataEl.textContent.includes('<b>x</b> & <img>')) return `rendered as "${dataEl.textContent}"`;
+});
+
+out.push('');
+out.push(errors.length ? `${errors.length} PROBLEM(S)` : 'ALL LESSONS CLEAN');
+document.getElementById('results').textContent = out.join('\n');
+document.title = errors.length ? 'HARNESS-FAIL' : 'HARNESS-PASS';
+</script>
+</body></html>
