@@ -1,87 +1,6 @@
-/* ── Crypto Lab ─────────────────────────────────────────────────────────────
-   Light "engineering manual" theme on Bootstrap 5.3: warm paper, near-black
-   ink, one burnt-orange accent. The 3D view is a framed graphite display.
-   Contrast (WCAG): ink 15.5, ink-2 9.0, muted 5.1 on paper; accent 5.5 on white.
+/* ── Lesson app (lab.html) ──────────────────────────────────────────────────
+   Palette, type and Bootstrap tuning live in base.css, shared with the landing page.
    ──────────────────────────────────────────────────────────────────────────── */
-:root{
-  --paper:#f6f4ef; --side:#efece4; --surface:#ffffff; --surface-2:#faf8f4;
-  --line:#e4dfd5; --line-strong:#d3cdc1;
-  --ink:#1d1c19; --ink-2:#46433c; --muted:#6b675e;
-  --accent:#b8410e; --accent-hover:#9c370c; --accent-active:#86300a;
-  --accent-bright:#e8590c;            /* on dark surfaces only */
-  --accent-soft:#fcf0e8;
-  --ok:#2c7a4b; --danger:#b42318; --warn:#965a00; --info:#1f5fa6;
-  --stage:#16171a;
-  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
-  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;
-  --nav-w:272px; --panel-w:410px;
-
-  /* Bootstrap, re-pointed at the palette above */
-  --bs-body-font-family:var(--sans);
-  --bs-body-font-size:.9375rem;
-  --bs-body-line-height:1.6;
-  --bs-body-bg:var(--paper);
-  --bs-body-color:var(--ink);
-  --bs-emphasis-color:var(--ink);
-  --bs-secondary-color:var(--muted);
-  --bs-border-color:var(--line);
-  --bs-font-monospace:var(--mono);
-  --bs-primary:#b8410e; --bs-primary-rgb:184,65,14;
-  --bs-danger:#b42318; --bs-danger-rgb:180,35,24;
-  --bs-success:#2c7a4b; --bs-success-rgb:44,122,75;
-  --bs-warning:#965a00; --bs-warning-rgb:150,90,0;
-  --bs-link-color:#b8410e; --bs-link-color-rgb:184,65,14;
-  --bs-link-hover-color:#86300a; --bs-link-hover-color-rgb:134,48,10;
-  --bs-focus-ring-color:rgba(184,65,14,.3);
-  --bs-border-radius:.5rem;
-  --bs-offcanvas-bg:var(--side);
-}
-
-/* ── Bootstrap component tuning ──────────────────────────────────────────── */
-.btn{--bs-btn-font-weight:500;--bs-btn-border-radius:.5rem;--bs-btn-padding-y:.5rem;--bs-btn-padding-x:.9rem;--bs-btn-font-size:.9rem}
-.btn-primary{
-  --bs-btn-bg:#b8410e;--bs-btn-border-color:#b8410e;--bs-btn-hover-bg:#9c370c;--bs-btn-hover-border-color:#9c370c;
-  --bs-btn-active-bg:#86300a;--bs-btn-active-border-color:#86300a;--bs-btn-disabled-bg:#b8410e;
-  --bs-btn-disabled-border-color:#b8410e;--bs-btn-focus-shadow-rgb:184,65,14;
-}
-.btn-dark{
-  --bs-btn-bg:#1d1c19;--bs-btn-border-color:#1d1c19;--bs-btn-hover-bg:#36332e;--bs-btn-hover-border-color:#36332e;
-  --bs-btn-active-bg:#000;--bs-btn-active-border-color:#000;--bs-btn-disabled-bg:#1d1c19;
-  --bs-btn-disabled-border-color:#1d1c19;--bs-btn-focus-shadow-rgb:29,28,25;
-}
-.btn-outline-secondary{
-  --bs-btn-color:#46433c;--bs-btn-bg:#fff;--bs-btn-border-color:#d3cdc1;--bs-btn-hover-color:#1d1c19;
-  --bs-btn-hover-bg:#f3f0e9;--bs-btn-hover-border-color:#bdb6a8;--bs-btn-active-color:#1d1c19;
-  --bs-btn-active-bg:#e9e5dc;--bs-btn-active-border-color:#bdb6a8;--bs-btn-disabled-color:#8a857b;
-  --bs-btn-disabled-bg:#fff;--bs-btn-disabled-border-color:#e4dfd5;--bs-btn-focus-shadow-rgb:70,67,60;
-}
-.btn-outline-danger{
-  --bs-btn-color:#b42318;--bs-btn-bg:#fff;--bs-btn-border-color:#e8b9b3;--bs-btn-hover-color:#8f1c13;
-  --bs-btn-hover-bg:#fdeeec;--bs-btn-hover-border-color:#b42318;--bs-btn-active-color:#fff;
-  --bs-btn-active-bg:#b42318;--bs-btn-active-border-color:#b42318;--bs-btn-focus-shadow-rgb:180,35,24;
-}
-.btn-outline-warning{
-  --bs-btn-color:#965a00;--bs-btn-bg:#fff;--bs-btn-border-color:#e3cb9c;--bs-btn-hover-color:#6f4300;
-  --bs-btn-hover-bg:#fdf4e2;--bs-btn-hover-border-color:#965a00;--bs-btn-active-color:#fff;
-  --bs-btn-active-bg:#965a00;--bs-btn-active-border-color:#965a00;--bs-btn-focus-shadow-rgb:150,90,0;
-}
-.form-control,.form-select{--bs-border-color:#d3cdc1;background-color:#fff;color:var(--ink)}
-.form-control:hover,.form-select:hover{border-color:#bdb6a8}
-.form-control:focus,.form-select:focus{border-color:var(--accent);box-shadow:0 0 0 .2rem rgba(184,65,14,.16)}
-.form-range::-webkit-slider-thumb{background-color:var(--accent)}
-.form-range::-moz-range-thumb{background-color:var(--accent)}
-.form-range::-webkit-slider-thumb:active{background-color:#e9b9a0}
-.form-range::-moz-range-thumb:active{background-color:#e9b9a0}
-.form-range::-webkit-slider-runnable-track{background-color:#e4dfd5}
-.form-range::-moz-range-track{background-color:#e4dfd5}
-.form-range:focus::-webkit-slider-thumb{box-shadow:0 0 0 1px #fff,0 0 0 .25rem rgba(184,65,14,.25)}
-.form-range:focus::-moz-range-thumb{box-shadow:0 0 0 1px #fff,0 0 0 .25rem rgba(184,65,14,.25)}
-.text-danger{color:var(--danger)!important}
-kbd{
-  padding:0 .35rem;font-family:var(--mono);font-size:.75rem;line-height:1.35rem;color:var(--ink-2);
-  background:var(--surface);border:1px solid var(--line-strong);border-bottom-width:2px;border-radius:.3rem;
-}
 
 /* ── Page frame ──────────────────────────────────────────────────────────── */
 html,body{height:100%}
@@ -91,22 +10,6 @@ body{
   grid-template-areas:"nav main panel";
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
 }
-[hidden]{display:none!important}
-::selection{background:#f6d2bd;color:var(--ink)}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-button{-webkit-tap-highlight-color:transparent}
-
-.skip{
-  position:fixed;z-index:2000;top:10px;left:10px;padding:.5rem .9rem;border-radius:.5rem;
-  background:var(--ink);color:#fff;font-weight:600;text-decoration:none;
-  transform:translateY(-160%);transition:transform .15s ease;
-}
-.skip:focus{transform:none;color:#fff}
-
-*::-webkit-scrollbar{width:10px;height:10px}
-*::-webkit-scrollbar-track{background:transparent}
-*::-webkit-scrollbar-thumb{background:#d6d0c4;border-radius:6px;border:2px solid transparent;background-clip:padding-box}
-*::-webkit-scrollbar-thumb:hover{background-color:#bdb6a8}
 
 /* ── Sidebar / drawer ────────────────────────────────────────────────────── */
 #nav{grid-area:nav;min-height:0;--bs-offcanvas-width:min(320px,86vw)}
@@ -118,9 +21,11 @@ button{-webkit-tap-highlight-color:transparent}
 .brand{display:flex;gap:12px;align-items:center}
 .brand-mark{width:34px;height:34px;flex:none;color:var(--ink)}
 .brand-mark .bm-lock{fill:var(--accent-bright)}
+.brand-home{display:flex;gap:12px;align-items:center;flex:1;min-width:0;color:inherit;text-decoration:none;border-radius:.4rem}
+.brand-home:hover .brand-name{color:var(--accent)}
 .brand-text{flex:1;min-width:0}
-.brand-name{margin:0;font-family:var(--serif);font-size:1.2rem;font-weight:700;line-height:1.15;letter-spacing:-.01em}
-.brand-sub{margin:2px 0 0;font-size:.8rem;color:var(--muted)}
+.brand-name{display:block;margin:0;font-family:var(--serif);font-size:1.2rem;font-weight:700;line-height:1.15;letter-spacing:-.01em;transition:color .15s ease}
+.brand-sub{display:block;margin:2px 0 0;font-size:.8rem;color:var(--muted)}
 .brand .btn-close{flex:none}
 
 /* One segment per lesson: position and what you've opened, at a glance. */

@@ -275,7 +275,7 @@ await Promise.race([
 buildNav();
 load(routeId());
 // Boot failures (CDN unreachable, syntax errors) are reported by the inline script in
-// index.html, which runs even when this module graph never loads.
+// lab.html, which runs even when this module graph never loads.
 window.__booted = true;
 requestAnimationFrame(() => {
   boot.classList.add('gone');
