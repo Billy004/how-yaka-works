@@ -1,4 +1,4 @@
-import { PAL, THREE, makeLabel, makeBitField, makeGlow, makeFlow, linePath, mat } from '../scene.js';
+import { PAL, THREE, makeLabel, makeBitField, makeGlow, makeFlow, linePath, mat, makeRim } from '../scene.js';
 import { makeCharStrip } from '../viz.js';
 import { sha256, bitDistance } from '../crypto/sha256.js';
 
@@ -58,10 +58,8 @@ export default {
       })
     );
     funnel.position.y = 1.9;
-    const funnelWire = new THREE.Mesh(
-      new THREE.CylinderGeometry(2.6, 0.45, 2.2, 28, 1, true),
-      new THREE.MeshBasicMaterial({ color: PAL.cyan, wireframe: true, transparent: true, opacity: 0.16 })
-    );
+    // glass sheen on the funnel's silhouette (was a triangulated wireframe)
+    const funnelWire = makeRim(funnel.geometry, PAL.cyan, 0.75, { power: 2.2, side: THREE.DoubleSide });
     funnelWire.position.y = 1.9;
     stage.add(funnel, funnelWire);
 

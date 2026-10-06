@@ -1,6 +1,6 @@
 import { PAL, THREE, makeLabel, makeShell, makeBox, makeGlow, makeFlow, linePath, makeConduit }
   from '../scene.js';
-import { makeKeyIcon, makeEngine } from '../viz.js';
+import { makeKeyIcon, makeEngine, makeCage } from '../viz.js';
 import { deriveDecoderKey, vendingKeyFromPhrase } from '../crypto/sts.js';
 import { blockHex } from '../crypto/cipher.js';
 
@@ -65,10 +65,7 @@ export default {
     stage.add(hsm);
 
     // a cage around the HSM to say "sealed"
-    const cage = new THREE.Mesh(
-      new THREE.BoxGeometry(2.5, 2.7, 1.9),
-      new THREE.MeshBasicMaterial({ color: PAL.red, wireframe: true, transparent: true, opacity: 0.2 })
-    );
+    const cage = makeCage(2.5, 2.7, 1.9, PAL.red);
     hsm.add(cage);
 
     // ── Derivation engine ──────────────────────────────────────────────

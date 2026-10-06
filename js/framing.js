@@ -20,7 +20,7 @@ export function frameStage(stage, {
   const homeTarget = controls.target.clone();
   const baseFov = camera.fov;
   const points = contentPoints(stage.scene);
-  let touched = false, raf = 0, disposed = false;
+  let touched = false, raf = 0, disposed = false, animating = false;
 
   /** Fit the projection to the current stage size and HUD height. */
   function project() {
@@ -75,37 +75,58 @@ export function frameStage(stage, {
     place(homeTarget.clone().addScaledVector(dir, d));
   }
 
+  /** Glide the camera to toPos, swinging around the target rather than cutting through it. */
+  function glide(fromPos, fromTarget, toPos, dur, ease) {
+    cancelAnimationFrame(raf);
+    if (REDUCED.matches) { place(toPos); return; }
+    animating = true;
+    const fromOff = fromPos.clone().sub(fromTarget), toOff = toPos.clone().sub(homeTarget);
+    const fromLen = fromOff.length(), toLen = toOff.length();
+    fromOff.normalize(); toOff.normalize();
+    const off = new THREE.Vector3(), t0 = performance.now();
+    const step = (now) => {
+      if (disposed) return;
+      const u = Math.min(1, (now - t0) / dur), e = ease(u);
+      controls.target.lerpVectors(fromTarget, homeTarget, e);
+      off.lerpVectors(fromOff, toOff, e).normalize().multiplyScalar(fromLen + (toLen - fromLen) * e);
+      camera.position.copy(controls.target).add(off);
+      if (u < 1) raf = requestAnimationFrame(step);
+      else { animating = false; place(toPos); }
+    };
+    raf = requestAnimationFrame(step);
+  }
+  const easeInOut = (u) => u < .5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2;
+  const easeOut = (u) => 1 - (1 - u) ** 3;
+
   /** Animate back to the framed view and resume following resizes. */
   function reset() {
     touched = false;
-    const fromPos = camera.position.clone(), fromTarget = controls.target.clone();
+    const { dir, d } = homeDistance();
+    glide(camera.position.clone(), controls.target.clone(), homeTarget.clone().addScaledVector(dir, d), 520, easeInOut);
+  }
+
+  /** Opening shot: settle in from a little further out and to the side. */
+  function intro() {
     const { dir, d } = homeDistance();
     const toPos = homeTarget.clone().addScaledVector(dir, d);
-    cancelAnimationFrame(raf);
-    if (REDUCED.matches) { place(toPos); return; }
-    const t0 = performance.now(), dur = 520;
-    const step = (now) => {
-      if (disposed) return;
-      const u = Math.min(1, (now - t0) / dur), e = u < .5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2;
-      camera.position.lerpVectors(fromPos, toPos, e);
-      controls.target.lerpVectors(fromTarget, homeTarget, e);
-      if (u < 1) raf = requestAnimationFrame(step); else place(toPos);
-    };
-    raf = requestAnimationFrame(step);
+    const fromDir = dir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), 0.24);
+    place(homeTarget.clone().addScaledVector(fromDir, d * 1.22));
+    glide(camera.position.clone(), homeTarget.clone(), toPos, 1150, easeOut);
   }
 
   const onStart = () => {
     cancelAnimationFrame(raf);
+    animating = false;
     if (!touched) { touched = true; onTouch?.(); }
   };
   controls.addEventListener('start', onStart);
 
   // Stage registers its own ResizeObserver first, so this one runs after it and
   // gets the final say on aspect and projection.
-  const ro = new ResizeObserver(() => { if (touched) project(); else fit(); });
+  const ro = new ResizeObserver(() => { if (touched || animating) project(); else fit(); });
   ro.observe(el);
 
-  fit();
+  intro();
 
   return {
     fit, reset,
@@ -123,15 +144,20 @@ export function frameStage(stage, {
  * Points that must stay in view: the corners of each visible object's world-space
  * box, measured from its actual vertices. (Transforming a geometry's local box
  * instead inflates anything rotated — a 45° roof came out twice its real size and
- * dragged the camera back.) Lights, helpers and the floor grid don't count.
+ * dragged the camera back.) Lights, helpers, the floor and anything tagged
+ * userData.noFit (rims, glows, particles, the shadow catcher) don't count.
  */
 function contentPoints(scene) {
   scene.updateMatrixWorld(true);
   const pts = [], b = new THREE.Box3(), v = new THREE.Vector3();
   const walk = (o) => {
-    if (!o.visible || o.isLight || o.isCamera || o.type === 'GridHelper') return;
+    if (!o.visible || o.isLight || o.isCamera || o.userData.noFit || o.type === 'GridHelper') return;
     const pos = o.geometry?.getAttribute?.('position');
-    if (pos && !o.isInstancedMesh) {
+    if (o.isInstancedMesh) {
+      // Instances are placed by matrix: bound them all (e.g. a 256-bit grid).
+      o.computeBoundingBox();
+      pts.push(...boxCorners(b.copy(o.boundingBox).applyMatrix4(o.matrixWorld)));
+    } else if (pos) {
       b.makeEmpty();
       for (let i = 0; i < pos.count; i++) b.expandByPoint(v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld));
       if (!b.isEmpty()) pts.push(...boxCorners(b));

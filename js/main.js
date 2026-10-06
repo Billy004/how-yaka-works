@@ -20,6 +20,9 @@ const BS = window.bootstrap;   // loaded by a deferred classic script ahead of t
 
 let active = null;   // { def, stage, framing, teardown }
 
+// ?debug exposes the live lesson so tooling can read renderer stats (draw calls, triangles).
+if (new URLSearchParams(location.search).has('debug')) window.__lab = { get active() { return active; } };
+
 /* ── Progress ──────────────────────────────────────────────────────────── */
 const SEEN_KEY = 'cryptolab.seen';
 // Storage can throw (blocked site data, some private modes); progress is a nicety, not a reason to fail boot.
@@ -223,6 +226,7 @@ function load(id) {
        <br><span class="hint">Details are in the browser console.</span></p></div>`;
   }
   linkTabMentions(controlsEl);
+  try { stage.finish(); } catch (e) { console.error('Contact shadows unavailable:', e); }
 
   let framing = null;
   try {

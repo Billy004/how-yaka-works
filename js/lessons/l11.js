@@ -111,7 +111,9 @@ export default {
     const track = makeBox(TL_W, 0.3, 0.16, 0x1e2024, { wireColor: PAL.steel, wireOpacity: 0.5 });
     track.position.set(0, TL_Y, 0);
     stage.add(track);
-    const fill = makeBox(0.1, 0.34, 0.2, PAL.cyan, { wire: false, emissive: PAL.cyan, emissiveIntensity: 0.4 });
+    // matte: it is stretched ~60× along x, and a glossy top would wash out to white
+    const fill = makeBox(0.1, 0.34, 0.2, PAL.cyan, { wire: false, emissive: PAL.cyan, emissiveIntensity: 0.12,
+      roughness: 0.75, env: 0.25 });
     fill.position.set(-TL_W / 2, TL_Y, 0.02);
     stage.add(fill);
     const marker = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.34, 4),
