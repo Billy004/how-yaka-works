@@ -54,10 +54,10 @@ export default {
     outField.group.position.set(0, -3.5, 0);
     stage.add(inField.group, outField.group);
 
-    const inLabel = makeLabel('INPUT BLOCK — 64 bits', { height: 0.2, color: '#9fb0c8' });
+    const inLabel = makeLabel('INPUT BLOCK — 64 bits', { height: 0.2, color: '#b3b0a8' });
     inLabel.position.set(0, 4.35, 0);
     stage.add(inLabel);
-    const outLabel = makeLabel('OUTPUT BLOCK', { height: 0.2, color: '#9fb0c8' });
+    const outLabel = makeLabel('OUTPUT BLOCK', { height: 0.2, color: '#b3b0a8' });
     outLabel.position.set(0, -4.35, 0);
     stage.add(outLabel);
 
@@ -72,7 +72,7 @@ export default {
       }));
       r.rotation.x = Math.PI / 2;
       r.position.y = y;
-      const lbl = makeLabel(`R${i + 1}`, { height: 0.15, mono: true, color: '#5a6d88' });
+      const lbl = makeLabel(`R${i + 1}`, { height: 0.15, mono: true, color: '#7f7c74' });
       lbl.position.set(1.45, y, 0);
       roundGroup.add(r, lbl);
       roundMeshes.push({ ring: r, label: lbl, y });

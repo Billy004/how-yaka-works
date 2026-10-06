@@ -14,11 +14,13 @@ const controlsEl = $('#page-controls');
 const dataEl     = $('#dataOut');
 const panelBody  = $('.panel-body');
 const navEl      = $('#nav');
+const navToggle  = $('#navToggle');
 const boot       = $('#boot');
+const BS = window.bootstrap;   // loaded by a deferred classic script ahead of this module
 
 let active = null;   // { def, stage, framing, teardown }
 
-/* ── Navigation ────────────────────────────────────────────────────────── */
+/* ── Progress ──────────────────────────────────────────────────────────── */
 const SEEN_KEY = 'cryptolab.seen';
 // Storage can throw (blocked site data, some private modes); progress is a nicety, not a reason to fail boot.
 const seen = new Set((() => {
@@ -29,24 +31,26 @@ const markSeen = (id) => {
   try { localStorage.setItem(SEEN_KEY, JSON.stringify([...seen])); } catch {}
 };
 
+/* ── Lesson list (sidebar ≥992px, offcanvas drawer below) ──────────────── */
 const TICK = '<svg class="tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+let focusContentOnClose = false;
 
 function buildNav() {
   listEl.innerHTML = '';
   for (const act of ACTS) {
     const h = document.createElement('div');
     h.className = 'act-head';
-    h.innerHTML = `<span>Act ${act.roman}</span> · ${act.title}`;
+    h.innerHTML = `<span class="act-num">Act ${act.roman}</span><span class="act-title">${act.title}</span>`;
     listEl.appendChild(h);
     for (const L of LESSONS.filter(l => l.act === act.n)) {
       const b = document.createElement('button');
+      b.type = 'button';
       b.className = 'lesson-btn';
       b.dataset.id = L.id;
       b.innerHTML = `<span class="num">${L.num}</span><span class="lt">${L.title}</span>${TICK}`;
       b.addEventListener('click', () => {
-        const wasDrawer = navEl.classList.contains('open');
         location.hash = L.id;
-        if (wasDrawer) { setNav(false); learnEl.focus({ preventScroll: true }); }
+        if (navEl.classList.contains('show')) { focusContentOnClose = true; closeNav(); }
       });
       listEl.appendChild(b);
     }
@@ -70,7 +74,7 @@ function refreshNav(id) {
   });
   $('#progress').setAttribute('aria-label', `Lesson ${idx + 1} of ${LESSONS.length}, ${visited} visited`);
   $('#progressLabel').textContent = `Lesson ${idx + 1} of ${LESSONS.length}`;
-  $('#progressSeen').textContent = `${visited}/${LESSONS.length} visited`;
+  $('#progressSeen').textContent = `${visited} of ${LESSONS.length} visited`;
 
   const prev = LESSONS[idx - 1], next = LESSONS[idx + 1];
   $('#prevBtn').disabled = !prev;
@@ -84,61 +88,51 @@ function refreshNav(id) {
   document.title = `${def.num}. ${def.title} — Crypto Lab`;
 }
 
-const navToggle = $('#navToggle');
-const scrim = $('#navScrim');
-const drawerMode = matchMedia('(max-width: 980px)');
-function setNav(open) {
-  navEl.classList.toggle('open', open);
-  // A closed drawer is off-screen: keep it out of the tab order and away from screen readers.
-  navEl.inert = drawerMode.matches && !open;
-  navToggle.setAttribute('aria-expanded', String(open));
-  scrim.hidden = !open;
-  if (open) listEl.querySelector('.lesson-btn.active')?.focus();
+// Bootstrap's Offcanvas brings the backdrop, focus trap, Escape and focus return.
+function closeNav() {
+  if (BS) BS.Offcanvas.getInstance(navEl)?.hide();
+  else navEl.classList.remove('show');
 }
-const closeNav = ({ restoreFocus = false } = {}) => {
-  if (!navEl.classList.contains('open')) return;
-  setNav(false);
-  if (restoreFocus) navToggle.focus();
-};
-navToggle.addEventListener('click', () => setNav(!navEl.classList.contains('open')));
-$('#navClose').addEventListener('click', () => closeNav({ restoreFocus: true }));
-scrim.addEventListener('click', () => closeNav());
-$('#stage-wrap').addEventListener('pointerdown', () => closeNav());
-// Crossing the breakpoint (rotating a tablet, resizing a window) resets the drawer.
-drawerMode.addEventListener('change', () => setNav(false));
-setNav(false);
+navEl.addEventListener('show.bs.offcanvas', () => navToggle.setAttribute('aria-expanded', 'true'));
+// Bootstrap focuses the drawer itself on open, and (via a listener it adds at click
+// time, so after ours) the toggle on close. Defer a tick so our choice lands last.
+navEl.addEventListener('shown.bs.offcanvas', () => setTimeout(() => {
+  listEl.querySelector('.lesson-btn.active')?.focus();
+}));
+navEl.addEventListener('hide.bs.offcanvas', () => navToggle.setAttribute('aria-expanded', 'false'));
+navEl.addEventListener('hidden.bs.offcanvas', () => {
+  const toContent = focusContentOnClose;
+  focusContentOnClose = false;
+  if (toContent) setTimeout(() => learnEl.focus({ preventScroll: true }));
+});
+navToggle.setAttribute('aria-expanded', 'false');
+if (!BS) navToggle.addEventListener('click', () => navEl.classList.toggle('show'));
 
 /* ── Tabs ──────────────────────────────────────────────────────────────── */
-// WAI-ARIA tabs: one tab stop for the group, arrow keys move between tabs, and
-// each tab keeps its own scroll position (they share one scroller).
-const tabs = $$('.tab');
+// Bootstrap's Tab handles ARIA state and arrow-key movement. The three panes share
+// one scroller, so each remembers its own scroll position.
+const tabs = $$('.panel-tabs .nav-link');
+const tabByName = (name) => tabs.find(t => t.dataset.tab === name);
 const scrollMemo = {};
-let currentTab = 'learn';
 
 function showTab(name, { focus = false } = {}) {
-  const t = tabs.find(x => x.dataset.tab === name);
+  const t = tabByName(name);
   if (!t) return;
-  if (name !== currentTab) scrollMemo[currentTab] = panelBody.scrollTop;
-  tabs.forEach(x => {
-    const on = x === t;
-    x.classList.toggle('active', on);
-    x.setAttribute('aria-selected', String(on));
-    x.tabIndex = on ? 0 : -1;
-  });
-  $$('.tab-page').forEach(p => p.classList.toggle('active', p.id === 'page-' + name));
-  if (name === 'controls') t.classList.remove('unseen');
-  if (name !== currentTab) panelBody.scrollTop = scrollMemo[name] || 0;
-  currentTab = name;
+  if (BS) BS.Tab.getOrCreateInstance(t).show();
+  else {
+    tabs.forEach(x => { const on = x === t; x.classList.toggle('active', on); x.setAttribute('aria-selected', String(on)); });
+    $$('.tab-pane').forEach(p => p.classList.toggle('active', p.id === `page-${name}`));
+    $$('.tab-pane').forEach(p => p.classList.toggle('show', p.id === `page-${name}`));
+  }
   if (focus) t.focus();
 }
-tabs.forEach((t, i) => {
-  t.addEventListener('click', () => showTab(t.dataset.tab));
-  t.addEventListener('keydown', (e) => {
-    const k = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
-    if (k === undefined) return;
-    e.preventDefault();
-    e.stopPropagation();   // don't also change lesson
-    showTab(tabs[(k + tabs.length) % tabs.length].dataset.tab, { focus: true });
+tabs.forEach(t => {
+  t.addEventListener('show.bs.tab', (e) => {
+    if (e.relatedTarget) scrollMemo[e.relatedTarget.dataset.tab] = panelBody.scrollTop;
+  });
+  t.addEventListener('shown.bs.tab', () => {
+    panelBody.scrollTop = scrollMemo[t.dataset.tab] || 0;
+    if (t.dataset.tab === 'controls') t.classList.remove('unseen');
   });
 });
 
@@ -159,18 +153,10 @@ function linkTabMentions(root) {
 /* ── Stage chrome ──────────────────────────────────────────────────────── */
 const resetBtn = $('#resetView');
 const hint = $('#stageHint');
-const coarse = matchMedia('(pointer: coarse)').matches;
-hint.textContent = coarse
-  ? 'drag to rotate · pinch to zoom'
-  : 'drag to orbit · scroll to zoom · right-drag to pan';
+hint.textContent = matchMedia('(pointer: coarse)').matches
+  ? 'Drag to rotate · pinch to zoom'
+  : 'Drag to orbit · scroll to zoom · right-drag to pan';
 let hasOrbited = false;   // once someone has used the camera, stop telling them how
-
-// Height of the title overlay, so framing can keep the scene below it.
-const hudInset = () => {
-  const top = $('#stage-wrap').getBoundingClientRect().top;
-  const parts = [...$('#hud').children].filter(n => n.offsetParent !== null);
-  return parts.length ? Math.max(...parts.map(n => n.getBoundingClientRect().bottom)) - top + 12 : 0;
-};
 
 resetBtn.addEventListener('click', () => {
   active?.framing?.reset();
@@ -190,20 +176,20 @@ function load(id) {
   const def = LESSONS.find(l => l.id === id) || LESSONS[0];
   unload();
 
-  $('#hudAct').textContent = `Act ${ACTS.find(a => a.n === def.act).roman} · Lesson ${def.num}`;
-  $('#hudTitle').textContent = def.title;
-  $('#hudSub').textContent = def.subtitle;
-  // The lead repeats the HUD subtitle; CSS shows it only where the HUD hides it (narrow screens).
+  $('#lessonAct').textContent = `Act ${ACTS.find(a => a.n === def.act).roman} · Lesson ${def.num}`;
+  $('#lessonTitle').textContent = def.title;
+  $('#lessonSub').textContent = def.subtitle;
+  // The lead repeats the subtitle; CSS shows it only on narrow screens, where the heading drops it.
   learnEl.innerHTML = `<p class="lead">${def.subtitle}</p>${def.learn}
     <div class="learn-cta"><p>Read enough? Try it for yourself.</p>
-    <button type="button" class="btn" data-goto="controls">Open Controls →</button></div>`;
+    <button type="button" class="btn btn-dark" data-goto="controls">Open Controls →</button></div>`;
   learnEl.querySelector('[data-goto]').addEventListener('click', () => showTab('controls', { focus: true }));
   linkTabMentions(learnEl);
   dataEl.innerHTML = '—';
-  for (const k in scrollMemo) delete scrollMemo[k];
   showTab('learn');
+  for (const k in scrollMemo) delete scrollMemo[k];   // after showTab, whose event saves the old lesson's scroll
   panelBody.scrollTop = 0;
-  $('#tab-controls').classList.add('unseen');
+  tabByName('controls').classList.add('unseen');
   resetBtn.hidden = true;
   hint.classList.toggle('done', hasOrbited);
 
@@ -214,8 +200,8 @@ function load(id) {
     console.error('Could not start WebGL:', e);
     stageEl.innerHTML =
       `<div style="display:grid;place-items:center;height:100%;padding:24px;text-align:center">
-         <div><p style="color:#ff5d6c;font-weight:600">3D could not start in this browser.</p>
-         <p style="color:#a9b8cd;font-size:13px">WebGL is unavailable or disabled. You can still
+         <div><p style="color:#f08c84;font-weight:600">3D could not start in this browser.</p>
+         <p style="color:#b3b0a8;font-size:14px">WebGL is unavailable or disabled. You can still
          read the lesson; the interactive controls need the 3D view.</p></div></div>`;
     controlsEl.innerHTML =
       `<div class="callout rd"><p>The controls drive the 3D scene, which could not start.
@@ -241,7 +227,6 @@ function load(id) {
   let framing = null;
   try {
     framing = frameStage(stage, {
-      insetTop: hudInset,
       insetBottom: () => hint.classList.contains('done') ? 0 : hint.offsetHeight + 14,
       onTouch: () => { resetBtn.hidden = false; hasOrbited = true; hint.classList.add('done'); }
     });
@@ -266,16 +251,23 @@ $('#nextBtn').addEventListener('click', () => {
   location.hash = LESSONS[i < LESSONS.length - 1 ? i + 1 : 0].id;
 });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') { closeNav({ restoreFocus: true }); return; }
-  if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+  if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || e.defaultPrevented) return;
   const el = document.activeElement;
   if (el?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el?.tagName)) return;
+  if (el?.closest('[role="tablist"]') || navEl.classList.contains('show')) return;
   const i = routeIndex();
   if (e.key === 'ArrowRight' && i < LESSONS.length - 1) location.hash = LESSONS[i + 1].id;
   if (e.key === 'ArrowLeft' && i > 0) location.hash = LESSONS[i - 1].id;
 });
 
 /* ── Go ────────────────────────────────────────────────────────────────── */
+// 3D labels are painted onto canvases once, so wait (briefly) for the web fonts;
+// otherwise the first lesson's labels would be stuck in the fallback face.
+await Promise.race([
+  Promise.all(['600 16px "IBM Plex Sans"', '600 16px "IBM Plex Mono"'].map(f => document.fonts?.load(f))),
+  new Promise(r => setTimeout(r, 2500))
+]).catch(() => {});
+
 buildNav();
 load(routeId());
 // Boot failures (CDN unreachable, syntax errors) are reported by the inline script in

@@ -60,7 +60,7 @@ export default {
       const shell = makeShell(2.2, 2.6, 1.5, color, 0.07);
       const t1 = makeLabel(title, { height: 0.23, color: '#fff', weight: 700 });
       t1.position.y = 1.7;
-      const t2 = makeLabel(sub, { height: 0.16, color: '#8fa3bd' });
+      const t2 = makeLabel(sub, { height: 0.16, color: '#a19e96' });
       t2.position.y = 1.44;
       g.add(shell, t1, t2);
       stage.add(g);
@@ -81,7 +81,7 @@ export default {
     const strip = makeCharStrip({ max: 20, tile: 0.26, gap: 0.04 });
     strip.group.position.set(0, 2.1, 0);
     stage.add(strip.group);
-    const stripLabel = makeLabel('MESSAGE — travels in the clear', { height: 0.18, color: '#9fb0c8' });
+    const stripLabel = makeLabel('MESSAGE — travels in the clear', { height: 0.18, color: '#b3b0a8' });
     stripLabel.position.set(0, 2.62, 0);
     stage.add(stripLabel);
 
@@ -105,10 +105,10 @@ export default {
     const bar = (y, label, color) => {
       const g = new THREE.Group();
       g.position.y = y;
-      const b = makeBox(2.6, 0.34, 0.16, 0x101a26, { wireColor: color, wireOpacity: 0.5 });
-      const l = makeLabel(label, { height: 0.15, mono: true, color: '#8fa3bd' });
+      const b = makeBox(2.6, 0.34, 0.16, 0x1c1e22, { wireColor: color, wireOpacity: 0.5 });
+      const l = makeLabel(label, { height: 0.15, mono: true, color: '#a19e96' });
       l.position.set(-1.85, 0, 0);
-      const v = makeLabel('—', { height: 0.17, mono: true, color: '#e6edf7' });
+      const v = makeLabel('—', { height: 0.17, mono: true, color: '#ebe9e4' });
       v.position.set(0, 0, 0.12);
       g.add(b, l, v);
       cmp.add(g);
@@ -117,7 +117,7 @@ export default {
     const barA = bar(0.3, 'from signature', PAL.amber);
     const barB = bar(-0.25, 'hashed here', PAL.cyan);
     const verdict = makeLabel('awaiting a message', { height: 0.26, color: '#ffffff', weight: 700 });
-    verdict.material.color.set('#647a99');
+    verdict.material.color.set('#86837b');
     verdict.position.set(0, -0.95, 0);
     cmp.add(verdict);
     stage.add(cmp);
@@ -134,7 +134,7 @@ export default {
     attacker.position.set(0, 0.9, 1.6);
     const ab = new THREE.Mesh(new THREE.OctahedronGeometry(0.3, 0),
       new THREE.MeshStandardMaterial({ color: 0x3a1f2a, emissive: PAL.red, emissiveIntensity: 0.25 }));
-    const al = makeLabel('attacker', { height: 0.15, mono: true, color: '#ff9aa4' });
+    const al = makeLabel('attacker', { height: 0.15, mono: true, color: '#f3a19c' });
     al.position.y = 0.5;
     attacker.add(ab, al);
     stage.add(attacker);
@@ -149,19 +149,19 @@ export default {
     const setVerdict = (state) => {
       if (state === 'ok') {
         verdict.setText('✓  SIGNATURE VALID');
-        verdict.material.color.set('#4ade80');
+        verdict.material.color.set('#62c08a');
         barA.box.material.color.setHex(0x0f2a1c);
         barB.box.material.color.setHex(0x0f2a1c);
       } else if (state === 'bad') {
         verdict.setText('✗  SIGNATURE INVALID');
-        verdict.material.color.set('#ff5d6c');
+        verdict.material.color.set('#ec5f59');
         barA.box.material.color.setHex(0x2d1117);
         barB.box.material.color.setHex(0x2d1117);
       } else {
         verdict.setText('awaiting a message');
-        verdict.material.color.set('#647a99');
-        barA.box.material.color.setHex(0x101a26);
-        barB.box.material.color.setHex(0x101a26);
+        verdict.material.color.set('#86837b');
+        barA.box.material.color.setHex(0x1c1e22);
+        barB.box.material.color.setHex(0x1c1e22);
       }
     };
 
@@ -174,7 +174,7 @@ export default {
       barA.value.setText(String(recovered));
       barB.value.setText(String(computed));
       setVerdict(ok ? 'ok' : 'bad');
-      strip.set(sent.message, { color: ok ? 0x16202e : 0x3a1f2a });
+      strip.set(sent.message, { color: ok ? 0x23252a : 0x3a1f2a });
 
       rVerify.set(ok
         ? 'VALID — signed by the private key, unchanged in transit'

@@ -56,7 +56,7 @@ export default {
     const hsmShell = makeShell(2.2, 2.4, 1.6, PAL.red, 0.09);
     const hsmTitle = makeLabel('HSM', { height: 0.26, color: '#fff', weight: 700 });
     hsmTitle.position.y = 1.6;
-    const hsmSub = makeLabel('vending key never leaves', { height: 0.16, color: '#ff9aa4' });
+    const hsmSub = makeLabel('vending key never leaves', { height: 0.16, color: '#f3a19c' });
     hsmSub.position.y = 1.33;
     const vk = makeKeyIcon(PAL.red, 'VENDING KEY');
     vk.scale.setScalar(0.8);
@@ -82,7 +82,7 @@ export default {
     const mShell = makeShell(2.2, 2.4, 1.5, PAL.green, 0.08);
     const mTitle = makeLabel('METER EEPROM', { height: 0.22, color: '#fff', weight: 700 });
     mTitle.position.y = 1.6;
-    const mSub = makeLabel('holds one derived key', { height: 0.16, color: '#8fa3bd' });
+    const mSub = makeLabel('holds one derived key', { height: 0.16, color: '#a19e96' });
     mSub.position.y = 1.33;
     const dkMeter = makeKeyIcon(PAL.green, 'DECODER KEY');
     dkMeter.scale.setScalar(0.72);
@@ -97,19 +97,19 @@ export default {
     stage.add(dkServer);
     const sameLabel = makeLabel('identical — computed twice, never sent',
       { height: 0.19, mono: true, color: '#ffffff' });
-    sameLabel.material.color.set('#7bffe8');
+    sameLabel.material.color.set('#a9cdf2');
     sameLabel.position.set(3.2, 1.5, 0);
     stage.add(sameLabel);
 
     // ── The public channel carrying nameplate data ─────────────────────
-    const plate = makeBox(4.4, 1.15, 0.12, 0x16202e, { wireColor: PAL.amber, wireOpacity: 0.55 });
+    const plate = makeBox(4.4, 1.15, 0.12, 0x23252a, { wireColor: PAL.amber, wireOpacity: 0.55 });
     plate.position.set(0, -2.5, 0);
     stage.add(plate);
     const plateTitle = makeLabel('PRINTED ON THE METER · NOT SECRET',
-      { height: 0.16, mono: true, color: '#ffb347' });
+      { height: 0.16, mono: true, color: '#f0a04b' });
     plateTitle.position.set(0, -1.85, 0);
     stage.add(plateTitle);
-    const plateText = makeLabel('', { height: 0.19, mono: true, color: '#e6edf7' });
+    const plateText = makeLabel('', { height: 0.19, mono: true, color: '#ebe9e4' });
     plateText.position.set(0, -2.5, 0.12);
     stage.add(plateText);
 
@@ -121,7 +121,7 @@ export default {
     const vkFlow = makeFlow(linePath([-4.3, 0.4, 0], [-2.3, 0.4, 0]), 7, PAL.red, 0.055);
     vkFlow.speed = 0.5;
     stage.add(vkFlow.group);
-    const vkNote = makeLabel('master key, inside the box only', { height: 0.15, mono: true, color: '#ff9aa4' });
+    const vkNote = makeLabel('master key, inside the box only', { height: 0.15, mono: true, color: '#f3a19c' });
     vkNote.position.set(-3.3, 1.0, 0);
     stage.add(vkNote);
 
@@ -131,7 +131,7 @@ export default {
 
     const barrier = makeConduit([2.6, 2.0, 0], [2.6, -3.0, 0], PAL.steel);
     stage.add(barrier);
-    const barrierLabel = makeLabel('utility  ·  |  ·  field', { height: 0.15, mono: true, color: '#5a6d88' });
+    const barrierLabel = makeLabel('utility  ·  |  ·  field', { height: 0.15, mono: true, color: '#7f7c74' });
     barrierLabel.position.set(2.6, 2.3, 0);
     stage.add(barrierLabel);
 
@@ -159,7 +159,7 @@ export default {
       }));
       sameLabel.setText(same ? 'identical — computed twice, never sent'
                              : 'DIFFERENT — the meter is out of sync');
-      sameLabel.material.color.set(same ? '#7bffe8' : '#ff9aa4');
+      sameLabel.material.color.set(same ? '#a9cdf2' : '#f3a19c');
       engine.setColor(same ? PAL.violet : PAL.red);
 
       ui.data({

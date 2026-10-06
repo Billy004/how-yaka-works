@@ -19,6 +19,22 @@ import {
   Meter, deriveDecoderKey, vendingKeyFromPhrase, buildCreditToken, decodeToken, tidFromDate, TID_MAX
 } from './js/crypto/sts.js';
 
+// The harness shares the app's origin and its fuzzing writes through Store (e.g. an empty DRN
+// from Lesson 9), so snapshot the app's saved state and put it back afterwards.
+const saved = (() => {
+  try { return Object.keys(localStorage).filter(k => k.startsWith('cryptolab.'))
+                       .map(k => [k, localStorage.getItem(k)]); }
+  catch { return null; }
+})();
+const restoreStorage = () => {
+  if (!saved) return;
+  try {
+    Object.keys(localStorage).filter(k => k.startsWith('cryptolab.')).forEach(k => localStorage.removeItem(k));
+    saved.forEach(([k, v]) => localStorage.setItem(k, v));
+  } catch {}
+};
+addEventListener('pagehide', restoreStorage);   // also covers closing the tab mid-run
+
 const errors = [];
 const realErr = console.error.bind(console);
 console.error = (...a) => { errors.push('console.error: ' + a.map(String).join(' ')); realErr(...a); };
@@ -128,6 +144,16 @@ check('the Data tab shows typed text literally', () => {
   const dataEl = document.createElement('pre');
   new UI(document.createElement('div'), dataEl).data({ message: '<b>x</b> & <img>' });
   if (!dataEl.textContent.includes('<b>x</b> & <img>')) return `rendered as "${dataEl.textContent}"`;
+});
+
+check(`app storage restored after the run (${saved ? saved.length : 'no'} saved keys)`, () => {
+  restoreStorage();
+  if (!saved) return '';
+  const now = Object.keys(localStorage).filter(k => k.startsWith('cryptolab.')).sort();
+  const was = saved.map(([k]) => k).sort();
+  if (now.join() !== was.join()) return `keys now [${now}] vs before [${was}]`;
+  const changed = saved.filter(([k, v]) => localStorage.getItem(k) !== v).map(([k]) => k);
+  if (changed.length) return `values differ for ${changed}`;
 });
 
 out.push('');

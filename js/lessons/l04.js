@@ -42,10 +42,10 @@ export default {
   `,
 
   build({ stage, ui }) {
-    const input = makeCharStrip({ max: 26, tile: 0.3, gap: 0.05, color: 0x16202e });
+    const input = makeCharStrip({ max: 26, tile: 0.3, gap: 0.05, color: 0x23252a });
     input.group.position.set(0, 3.6, 0);
     stage.add(input.group);
-    const inLabel = makeLabel('INPUT — any length at all', { height: 0.2, color: '#9fb0c8' });
+    const inLabel = makeLabel('INPUT — any length at all', { height: 0.2, color: '#b3b0a8' });
     inLabel.position.set(0, 4.15, 0);
     stage.add(inLabel);
 
@@ -73,7 +73,7 @@ export default {
     throatGlow.position.set(0, 0.78, 0);
     stage.add(throat, throatGlow);
 
-    const oneWay = makeLabel('SHA-256  ·  one way only', { height: 0.19, mono: true, color: '#7bffe8' });
+    const oneWay = makeLabel('SHA-256  ·  one way only', { height: 0.19, mono: true, color: '#a9cdf2' });
     oneWay.position.set(2.4, 0.9, 0);
     stage.add(oneWay);
 
@@ -87,7 +87,7 @@ export default {
     const field = makeBitField(256, 16, { gap: 0.185, size: 0.125 });
     field.group.position.set(0, -2.1, 0);
     stage.add(field.group);
-    const outLabel = makeLabel('DIGEST — always exactly 256 bits', { height: 0.2, color: '#c9a8e8' });
+    const outLabel = makeLabel('DIGEST — always exactly 256 bits', { height: 0.2, color: '#cdb8e6' });
     outLabel.position.set(0, -3.75, 0);
     stage.add(outLabel);
 

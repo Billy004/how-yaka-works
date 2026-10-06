@@ -8,6 +8,10 @@ const el = (tag, cls, html) => {
   return n;
 };
 
+// Lesson-facing variant names → Bootstrap button classes.
+const BTN = { '': 'btn-dark', ghost: 'btn-outline-secondary', warn: 'btn-outline-warning', danger: 'btn-outline-danger' };
+const btnClass = (variant = '') => `btn ${BTN[variant] ?? BTN['']}`;
+
 let uid = 0;
 /** Give a control an id and point its <label> at it, so screen readers announce the label. */
 const linkLabel = (wrap, input) => {
@@ -45,7 +49,7 @@ export class UI {
 
   text({ label, value = '', placeholder = '', mono = true, maxlength, onInput }) {
     const c = this._wrap(label);
-    const i = el('input');
+    const i = el('input', 'form-control');
     i.type = 'text';
     i.value = value;
     i.placeholder = placeholder;
@@ -66,7 +70,7 @@ export class UI {
 
   textarea({ label, value = '', placeholder = '', rows = 3, onInput }) {
     const c = this._wrap(label);
-    const t = el('textarea');
+    const t = el('textarea', 'form-control');
     t.value = value; t.placeholder = placeholder; t.rows = rows;
     c.appendChild(t);
     linkLabel(c, t);
@@ -81,7 +85,7 @@ export class UI {
     const b = el('b', null, format(value));
     row.appendChild(b);
     c.appendChild(row);
-    const i = el('input');
+    const i = el('input', 'form-range');
     i.type = 'range'; i.min = min; i.max = max; i.step = step; i.value = value;
     i.setAttribute('aria-label', label);
     c.appendChild(i);
@@ -92,7 +96,7 @@ export class UI {
 
   select({ label, options, value, onChange }) {
     const c = this._wrap(label);
-    const s = el('select');
+    const s = el('select', 'form-select');
     for (const o of options) {
       const opt = el('option', null, o.label);
       opt.value = o.value;
@@ -106,23 +110,22 @@ export class UI {
   }
 
   button(label, onClick, { variant = '', full = true } = {}) {
-    const b = el('button', `btn ${variant}`, label);
-    if (!full) b.style.width = 'auto';
+    const b = el('button', `${btnClass(variant)} ctl-btn${full ? ' w-100' : ''}`, label);
+    b.type = 'button';
     b.addEventListener('click', () => onClick?.(b));
     this.current.appendChild(b);
-    return { el: b, disable: (v) => { b.disabled = !!v; b.style.opacity = v ? .4 : 1; },
-             label: (t) => { b.innerHTML = t; } };
+    return { el: b, disable: (v) => { b.disabled = !!v; }, label: (t) => { b.innerHTML = t; } };
   }
 
   buttonRow(defs) {
-    const row = el('div', 'btnrow');
+    const row = el('div', 'btnrow ctl-btn');
     this.current.appendChild(row);
     return defs.map(d => {
-      const b = el('button', `btn ${d.variant || ''}`, d.label);
+      const b = el('button', btnClass(d.variant), d.label);
+      b.type = 'button';
       b.addEventListener('click', () => d.onClick?.(b));
       row.appendChild(b);
-      return { el: b, disable: (v) => { b.disabled = !!v; b.style.opacity = v ? .4 : 1; },
-               label: (t) => { b.innerHTML = t; } };
+      return { el: b, disable: (v) => { b.disabled = !!v; }, label: (t) => { b.innerHTML = t; } };
     });
   }
 
@@ -139,6 +142,7 @@ export class UI {
     });
     const btns = options.map(o => {
       const b = el('button', 'chip', o.label);
+      b.type = 'button';
       b.addEventListener('click', () => { mark(o.value); onChange?.(o.value); });
       wrap.appendChild(b);
       return b;

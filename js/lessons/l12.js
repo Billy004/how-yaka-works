@@ -70,14 +70,14 @@ export default {
     // Phone
     const phone = new THREE.Group();
     phone.position.set(-8.4, 0.6, 1.4);
-    const phoneBody = makeBox(1.0, 1.9, 0.12, 0x1a2536, { wireColor: PAL.cyan, wireOpacity: 0.4 });
+    const phoneBody = makeBox(1.0, 1.9, 0.12, 0x26282d, { wireColor: PAL.cyan, wireOpacity: 0.4 });
     const phoneScreen = makeBox(0.86, 1.5, 0.04, 0x07110f, { wire: false });
     phoneScreen.position.z = 0.08;
-    const phoneText = makeLabel('', { height: 0.14, mono: true, color: '#7bffe8' });
+    const phoneText = makeLabel('', { height: 0.14, mono: true, color: '#a9cdf2' });
     phoneText.position.set(0, 0, 0.13);
     phone.add(phoneBody, phoneScreen, phoneText);
     stage.add(phone);
-    const phoneCap = makeLabel('CUSTOMER', { height: 0.19, color: '#9fb0c8' });
+    const phoneCap = makeLabel('CUSTOMER', { height: 0.19, color: '#b3b0a8' });
     phoneCap.position.set(-8.4, 1.9, 1.4);
     stage.add(phoneCap);
 
@@ -87,7 +87,7 @@ export default {
     const rack = makeShell(2.4, 3.0, 1.6, PAL.cyan, 0.07);
     const srvCap = makeLabel('VENDING SERVER', { height: 0.21, color: '#ffffff', weight: 700 });
     srvCap.position.y = 1.95;
-    const srvSub = makeLabel('derives the key · builds the token', { height: 0.15, color: '#8fa3bd' });
+    const srvSub = makeLabel('derives the key · builds the token', { height: 0.15, color: '#a19e96' });
     srvSub.position.y = 1.68;
     server.add(rack, srvCap, srvSub);
     stage.add(server);
@@ -109,7 +109,7 @@ export default {
     stage.add(tok.group);
     const tokCap = makeLabel('TOKEN — public, unforgeable, single-use',
       { height: 0.18, mono: true, color: '#ffffff' });
-    tokCap.material.color.set('#7bffe8');
+    tokCap.material.color.set('#a9cdf2');
     tokCap.position.set(-0.4, 3.95, 0);
     stage.add(tokCap);
 
@@ -149,7 +149,7 @@ export default {
 
     const stageLabel = makeLabel('', { height: 0.26, color: '#ffffff', weight: 700 });
     stageLabel.position.set(-0.4, -1.6, 0);
-    stageLabel.material.color.set('#647a99');
+    stageLabel.material.color.set('#86837b');
     stage.add(stageLabel);
 
     /* ── State ────────────────────────────────────────────────────── */
@@ -176,7 +176,7 @@ export default {
       rKrnState.set(`KRN ${s.krn}${s.tamper ? '  ·  TAMPER' : ''}`, s.tamper ? 'err' : '');
     };
 
-    const setStage = (text, color = '#35e0d6') => {
+    const setStage = (text, color = '#5ea1e6') => {
       stageLabel.setText(text);
       stageLabel.material.color.set(color);
     };
@@ -191,32 +191,32 @@ export default {
 
       const steps = [
         [1.1, () => {
-          setStage('1 · PAYING', '#4ade80');
+          setStage('1 · PAYING', '#62c08a');
           phoneText.setText(`MOBILE MONEY\n\nUGX ${spend.toLocaleString()}\nmeter\n${meter.drn}\n\nsending…`);
           payFlow.active = true;
           log.add(`Customer pays UGX ${spend.toLocaleString()} for meter ${meter.drn}.`, 'cy');
         }],
         [1.0, () => {
           payFlow.active = false;
-          setStage('2 · DERIVING THE KEY', '#ff5d6c');
+          setStage('2 · DERIVING THE KEY', '#ec5f59');
           srvKey.scale.setScalar(0.62);
           log.add(`Server derives the decoder key from the vending key + DRN → ${blockHex(meter.dk)}`, '');
         }],
         [1.0, () => {
           srvKey.scale.setScalar(0.42);
-          setStage('3 · ASSEMBLING THE BLOCK', '#ffb347');
+          setStage('3 · ASSEMBLING THE BLOCK', '#f0a04b');
           issuedTid = Store.issueTid(tidFromDate(new Date(), meter.baseDate));
           token = buildCreditToken({ tid: issuedTid, units, dk: meter.dk });
           log.add(`Block: subclass 0 | TID ${issuedTid} | ${units} units | CRC`, '');
         }],
         [1.1, () => {
-          setStage('4 · ENCRYPTING', '#35e0d6');
+          setStage('4 · ENCRYPTING', '#5ea1e6');
           srvEngine.setSpin(4);
           log.add(`Encrypted under the decoder key → ${blockHex(token.cipherBlock)}`, '');
         }],
         [1.0, () => {
           srvEngine.setSpin(1);
-          setStage('5 · RENDERING 20 DIGITS', '#35e0d6');
+          setStage('5 · RENDERING 20 DIGITS', '#5ea1e6');
           tok.set(token.digits);
           tokFlow.active = true;
           lastDigits = token.digits;
@@ -226,32 +226,32 @@ export default {
         [1.2, () => {
           tokFlow.active = false;
           smsFlow.active = true;
-          setStage('6 · SMS TO THE CUSTOMER', '#35e0d6');
+          setStage('6 · SMS TO THE CUSTOMER', '#5ea1e6');
           phoneText.setText(`TOKEN\n\n${token.groups.split(' ').join('\n')}\n\n${kwh.toFixed(1)} kWh`);
         }],
         [1.4, () => {
           smsFlow.active = false;
           typeFlow.active = true;
-          setStage('7 · TYPING IT IN', '#8b7cf6');
+          setStage('7 · TYPING IT IN', '#a58bd8');
           ciu.setScreen('ENTER…');
           [...token.digits].forEach((ch, i) => setTimeout(() => ciu.press(ch), i * 55));
         }],
         [1.4, () => {
           typeFlow.active = false;
           plcFlow.active = true;
-          setStage('8 · MCU VALIDATES', '#8b7cf6');
+          setStage('8 · MCU VALIDATES', '#a58bd8');
         }],
         [1.3, () => {
           plcFlow.active = false;
           const r = meter.feed(token.digits);
           r.steps.forEach(s => log.add(`  ${s.step}: ${s.detail}`, s.ok ? 'ok' : 'err'));
           if (r.ok) {
-            setStage(`✓ ${kwh.toFixed(1)} kWh CREDITED — POWER ON`, '#4ade80');
+            setStage(`✓ ${kwh.toFixed(1)} kWh CREDITED — POWER ON`, '#62c08a');
             log.add(`Accepted. Balance now ${meter.balanceKwh.toFixed(1)} kWh.`, 'ok');
             Store.recordToken({ digits: token.digits, groups: token.groups, kwh,
               tid: issuedTid, cls: 0, drn: meter.drn, issuedAt: new Date().toISOString() });
           } else {
-            setStage('✗ REJECTED', '#ff5d6c');
+            setStage('✗ REJECTED', '#ec5f59');
             log.add(r.reason, 'err');
           }
           syncMeter();
@@ -310,7 +310,7 @@ export default {
     ui.button('Use 1 kWh now', () => {
       meter.consume(1);
       syncMeter();
-      if (!meter.relay) { setStage('✗ BALANCE EXHAUSTED — RELAY OPEN', '#ff5d6c'); log.add('Balance reached zero. Relay opened.', 'err'); }
+      if (!meter.relay) { setStage('✗ BALANCE EXHAUSTED — RELAY OPEN', '#ec5f59'); log.add('Balance reached zero. Relay opened.', 'err'); }
     }, { variant: 'ghost' });
 
     ui.section('Enter a token by hand');
@@ -320,7 +320,7 @@ export default {
       const d = normaliseDigits(tokCtl.get());
       const r = meter.feed(d);
       r.steps.forEach(s => log.add(`  ${s.step}: ${s.detail}`, s.ok ? 'ok' : 'err'));
-      setStage(r.ok ? '✓ ACCEPTED' : '✗ REJECTED', r.ok ? '#4ade80' : '#ff5d6c');
+      setStage(r.ok ? '✓ ACCEPTED' : '✗ REJECTED', r.ok ? '#62c08a' : '#ec5f59');
       if (!r.ok) log.add(r.reason, 'err');
       syncMeter();
     }, { variant: 'ghost' });
@@ -328,7 +328,7 @@ export default {
     ui.section('Try to break it');
     ui.button('Re-enter the last token', () => {
       const r = meter.feed(lastDigits);
-      setStage(r.ok ? '✓ ACCEPTED' : '✗ REPLAY REJECTED', r.ok ? '#4ade80' : '#ff5d6c');
+      setStage(r.ok ? '✓ ACCEPTED' : '✗ REPLAY REJECTED', r.ok ? '#62c08a' : '#ec5f59');
       log.add(r.ok ? 'Accepted.' : r.reason, r.ok ? 'ok' : 'err');
       syncMeter();
     }, { variant: 'danger' });
@@ -347,7 +347,7 @@ export default {
       }
       log.add(`500 random tokens: ${crcPass} passed CRC, ${hits} were accepted.`,
         hits ? 'err' : 'ok');
-      setStage(hits ? '✗ A GUESS GOT THROUGH' : '✓ 500 GUESSES, ALL REJECTED', hits ? '#ff5d6c' : '#4ade80');
+      setStage(hits ? '✗ A GUESS GOT THROUGH' : '✓ 500 GUESSES, ALL REJECTED', hits ? '#ec5f59' : '#62c08a');
       ui.data({
         'attempts': '500 random 20-digit tokens',
         'passed the CRC gate': String(crcPass),
@@ -362,7 +362,7 @@ export default {
     ui.button('Attack the keypad with a hammer', () => {
       log.add('CIU destroyed.', 'err');
       log.add('MCU is on the pole. Relay unchanged. Balance unchanged. Supply unaffected.', 'ok');
-      setStage('CIU DESTROYED — SUPPLY UNAFFECTED', '#4ade80');
+      setStage('CIU DESTROYED — SUPPLY UNAFFECTED', '#62c08a');
       tl.run(0.6, (u) => {
         ciu.group.rotation.z = Math.sin(u * 30) * 0.2 * (1 - u);
         ciu.group.position.y = 0.3 - u * 0.9;
@@ -385,7 +385,7 @@ export default {
       meter.balanceKwh = 0; meter.lastTid = 0; meter.usedTids.clear();
       meter.relay = false; meter.tamper = null;
       running = false;
-      setStage('METER RESET', '#647a99');
+      setStage('METER RESET', '#86837b');
       log.clear(); log.add('Meter reset.', '');
       syncMeter();
     }, { variant: 'ghost' });
@@ -411,7 +411,7 @@ export default {
           meter.consume(use);
           syncMeter();
           if (wasOn && !meter.relay) {
-            setStage('✗ BALANCE EXHAUSTED — RELAY OPEN', '#ff5d6c');
+            setStage('✗ BALANCE EXHAUSTED — RELAY OPEN', '#ec5f59');
             log.add('Balance reached zero. Relay opened. Lights out.', 'err');
             running = false;
           }
@@ -424,7 +424,7 @@ export default {
     tok.set(lastDigits ? lastDigits : '0'.repeat(20));
     phoneText.setText('MOBILE MONEY\n\nready');
     syncMeter();
-    setStage('READY — press Buy credit', '#647a99');
+    setStage('READY — press Buy credit', '#86837b');
     log.add(`Meter ${meter.drn} · balance ${meter.balanceKwh.toFixed(1)} kWh · relay ${meter.relay ? 'closed' : 'open'}`, '');
     ui.data({
       'meter DRN': meter.drn,

@@ -95,10 +95,10 @@ export default {
     kct2.group.scale.setScalar(0.9);
     stage.add(kct1.group, kct2.group);
     const l1 = makeLabel('KCT 1 — first half of the new key', { height: 0.16, mono: true, color: '#ffffff' });
-    l1.material.color.set('#b9a4f5');
+    l1.material.color.set('#c7b5e8');
     l1.position.set(-2.6, 3.0, 0);
     const l2 = makeLabel('KCT 2 — second half', { height: 0.16, mono: true, color: '#ffffff' });
-    l2.material.color.set('#b9a4f5');
+    l2.material.color.set('#c7b5e8');
     l2.position.set(-2.6, 2.1, 0);
     stage.add(l1, l2);
 
@@ -108,7 +108,7 @@ export default {
 
     // ── TID timeline ───────────────────────────────────────────────────
     const TL_W = 10.4, TL_Y = -1.9;
-    const track = makeBox(TL_W, 0.3, 0.16, 0x111c29, { wireColor: PAL.steel, wireOpacity: 0.5 });
+    const track = makeBox(TL_W, 0.3, 0.16, 0x1e2024, { wireColor: PAL.steel, wireOpacity: 0.5 });
     track.position.set(0, TL_Y, 0);
     stage.add(track);
     const fill = makeBox(0.1, 0.34, 0.2, PAL.cyan, { wire: false, emissive: PAL.cyan, emissiveIntensity: 0.4 });
@@ -127,14 +127,14 @@ export default {
     ceiling.position.set(TL_W / 2, TL_Y, 0.06);
     stage.add(ceiling);
     const ceilLabel = makeLabel('', { height: 0.16, mono: true, color: '#ffffff' });
-    ceilLabel.material.color.set('#ff9aa4');
+    ceilLabel.material.color.set('#f3a19c');
     ceilLabel.position.set(TL_W / 2 - 0.9, TL_Y - 0.6, 0.1);
     stage.add(ceilLabel);
     const startLabel = makeLabel('', { height: 0.16, mono: true, color: '#ffffff' });
-    startLabel.material.color.set('#647a99');
+    startLabel.material.color.set('#86837b');
     startLabel.position.set(-TL_W / 2 + 0.8, TL_Y - 0.6, 0.1);
     stage.add(startLabel);
-    const tlTitle = makeLabel('24-BIT TID SPACE', { height: 0.18, color: '#9fb0c8' });
+    const tlTitle = makeLabel('24-BIT TID SPACE', { height: 0.18, color: '#b3b0a8' });
     tlTitle.position.set(0, TL_Y - 1.15, 0);
     stage.add(tlTitle);
 

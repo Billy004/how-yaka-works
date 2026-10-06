@@ -9,10 +9,10 @@ import { Store } from '../store.js';
 
 /* Field layout of the 64-bit data block, most significant bit first. */
 const FIELDS = [
-  { name: 'SUBCLASS', bits: 4,  color: 0x8b7cf6, note: 'what kind of credit' },
-  { name: 'TID',      bits: 24, color: 0x35e0d6, note: 'minutes since the base date' },
-  { name: 'AMOUNT',   bits: 20, color: 0xffb347, note: 'units of 0.1 kWh' },
-  { name: 'CRC',      bits: 16, color: 0x4ade80, note: 'error check' }
+  { name: 'SUBCLASS', bits: 4,  color: 0xa58bd8, note: 'what kind of credit' },
+  { name: 'TID',      bits: 24, color: 0x5ea1e6, note: 'minutes since the base date' },
+  { name: 'AMOUNT',   bits: 20, color: 0xf0a04b, note: 'units of 0.1 kWh' },
+  { name: 'CRC',      bits: 16, color: 0x62c08a, note: 'error check' }
 ];
 
 export default {
@@ -81,9 +81,9 @@ export default {
         roughness: 0.4, emissive: f.color, emissiveIntensity: 0.18, wire: false
       });
       box.position.x = x + w / 2;
-      const nameL = makeLabel(`${f.name}`, { height: 0.17, mono: true, color: '#e6edf7', weight: 700 });
+      const nameL = makeLabel(`${f.name}`, { height: 0.17, mono: true, color: '#ebe9e4', weight: 700 });
       nameL.position.set(x + w / 2, 0.46, 0);
-      const bitsL = makeLabel(`${f.bits}b`, { height: 0.14, mono: true, color: '#8fa3bd' });
+      const bitsL = makeLabel(`${f.bits}b`, { height: 0.14, mono: true, color: '#a19e96' });
       bitsL.position.set(x + w / 2, -0.44, 0);
       const valL = makeLabel('—', { height: 0.16, mono: true, color: '#06121a', weight: 700 });
       valL.position.set(x + w / 2, 0, 0.15);
@@ -93,7 +93,7 @@ export default {
     });
     stage.add(fieldGroup);
     const barTitle = makeLabel('64-BIT DATA BLOCK — assembled in the clear',
-      { height: 0.2, color: '#9fb0c8' });
+      { height: 0.2, color: '#b3b0a8' });
     barTitle.position.set(0, 4.35, 0);
     stage.add(barTitle);
 
@@ -125,7 +125,7 @@ export default {
     cipherBits.group.position.set(0, -1.5, 0);
     stage.add(cipherBits.group);
     const cipherLabel = makeLabel('ENCRYPTED — nothing about the amount is visible',
-      { height: 0.18, color: '#c9a8e8' });
+      { height: 0.18, color: '#cdb8e6' });
     cipherLabel.position.set(0, -2.15, 0);
     stage.add(cipherLabel);
 
@@ -134,10 +134,10 @@ export default {
     tok.group.position.set(0, -3.4, 0);
     stage.add(tok.group);
     const tokLabel = makeLabel('20-DIGIT TOKEN — what the customer receives',
-      { height: 0.2, color: '#7bffe8' });
+      { height: 0.2, color: '#a9cdf2' });
     tokLabel.position.set(0, -4.15, 0);
     stage.add(tokLabel);
-    const classTag = makeLabel('', { height: 0.16, mono: true, color: '#ffb347' });
+    const classTag = makeLabel('', { height: 0.16, mono: true, color: '#f0a04b' });
     classTag.position.set(0, -2.85, 0);
     stage.add(classTag);
 

@@ -6,18 +6,21 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 export { THREE };
 
+// The 3D view is a graphite "display" inside a light page. Names are semantic
+// history (lessons use PAL.cyan for data, PAL.violet for ciphertext); the values
+// are muted so the scenes read as diagrams rather than neon.
 export const PAL = {
-  bg:      0x080b11,
-  cyan:    0x35e0d6,
-  cyanDim: 0x1b8a86,
-  amber:   0xffb347,
-  violet:  0x8b7cf6,
-  red:     0xff5d6c,
-  green:   0x4ade80,
-  steel:   0x2b3a52,
-  slate:   0x1a2432,
-  ink:     0xe6edf7,
-  muted:   0x6b7d96
+  bg:      0x16171a,   // graphite
+  cyan:    0x5ea1e6,   // data / plaintext — calm blue
+  cyanDim: 0x2f5f8f,
+  amber:   0xf0a04b,   // keys — same family as the page's orange accent
+  violet:  0xa58bd8,   // ciphertext — soft plum
+  red:     0xec5f59,
+  green:   0x62c08a,
+  steel:   0x3a3d44,
+  slate:   0x26282d,
+  ink:     0xebe9e4,
+  muted:   0x86837b
 };
 
 /* ── Stage ─────────────────────────────────────────────────────────────── */
@@ -51,7 +54,7 @@ export class Stage {
     this.controls.maxPolarAngle = Math.PI * 0.86;
     this.controls.target.set(...(opts.target || [0, 0.6, 0]));
 
-    this.scene.add(new THREE.AmbientLight(0x93b4d8, 0.55));
+    this.scene.add(new THREE.AmbientLight(0xc9c6bf, 0.55));
     const key = new THREE.DirectionalLight(0xffffff, 1.15);
     key.position.set(5, 9, 6);
     this.scene.add(key);
@@ -63,7 +66,7 @@ export class Stage {
     this.scene.add(fill);
 
     if (opts.grid !== false) {
-      const grid = new THREE.GridHelper(opts.gridSize ?? 44, opts.gridDiv ?? 44, PAL.steel, 0x141d2b);
+      const grid = new THREE.GridHelper(opts.gridSize ?? 44, opts.gridDiv ?? 44, PAL.steel, 0x232529);
       grid.material.transparent = true;
       grid.material.opacity = 0.34;
       grid.position.y = opts.gridY ?? -2.2;
@@ -119,8 +122,9 @@ export class Stage {
 function disposeMat(m) { if (m.map) m.map.dispose(); m.dispose(); }
 
 /* ── Text ──────────────────────────────────────────────────────────────── */
-const FONT_MONO = '"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace';
-const FONT_SANS = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif';
+// Same faces as the page (loaded from Google Fonts; main.js waits for them before the first lesson).
+const FONT_MONO = '"IBM Plex Mono",ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace';
+const FONT_SANS = '"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif';
 
 function drawText(canvas, text, o) {
   const px = 72;
@@ -141,7 +145,7 @@ function drawText(canvas, text, o) {
     if (o.border) { c.strokeStyle = o.border; c.lineWidth = 4; c.stroke(); }
   }
   c.font = font;
-  c.fillStyle = o.color || '#e6edf7';
+  c.fillStyle = o.color || '#ebe9e4';
   c.textBaseline = 'middle';
   c.textAlign = o.align || 'center';
   const x = o.align === 'left' ? padX : o.align === 'right' ? canvas.width - padX : canvas.width / 2;

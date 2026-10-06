@@ -68,7 +68,7 @@ export default {
     // supply cable, pole → house
     const supply = makeConduit([-3.4, 2.4, 0.4], [2.4, 0.9, 0.2], PAL.amber);
     stage.add(supply);
-    const supplyLabel = makeLabel('mains supply', { height: 0.16, mono: true, color: '#ffb347' });
+    const supplyLabel = makeLabel('mains supply', { height: 0.16, mono: true, color: '#f0a04b' });
     supplyLabel.position.set(-0.6, 2.1, 0.3);
     stage.add(supplyLabel);
 
@@ -77,7 +77,7 @@ export default {
     plc.speed = 0.3;
     stage.add(plc.group);
     const plcLabel = makeLabel('PLC / RF  ·  keypresses up, status down',
-      { height: 0.17, mono: true, color: '#b9a4f5' });
+      { height: 0.17, mono: true, color: '#c7b5e8' });
     plcLabel.position.set(-0.4, 1.35, 0.9);
     stage.add(plcLabel);
 
@@ -87,7 +87,7 @@ export default {
     dk.position.set(-3.75, 3.0, 1.15);
     stage.add(dk);
     const dkLabel = makeLabel('Decoder Key · in EEPROM, up here',
-      { height: 0.15, mono: true, color: '#8ff0c0' });
+      { height: 0.15, mono: true, color: '#a6dcbc' });
     dkLabel.position.set(-3.4, 2.55, 1.15);
     stage.add(dkLabel);
 
@@ -184,7 +184,7 @@ export default {
         resetFocus();
         const p = PARTS[k];
         p.focus();
-        rPart.set(`<strong style="color:#fff">${p.label}</strong><br>${p.text}`);
+        rPart.set(`<strong>${p.label}</strong><br>${p.text}`);
         ui.data(p.data);
       }
     });
@@ -212,7 +212,7 @@ export default {
       reachLine.visible = !reachLine.visible;
       btn.innerHTML = reachLine.visible ? 'Hide reach line' : 'Show what a customer can reach';
       if (reachLine.visible) {
-        rPart.set('<strong style="color:#ff5d6c">Everything to the right of the red line is ' +
+        rPart.set('<strong class="text-danger">Everything to the right of the red line is ' +
                   'reachable from inside the house.</strong><br>None of it holds a key, a balance, ' +
                   'or the switch.');
         ui.data({
@@ -239,7 +239,7 @@ export default {
         log.add('Cover micro-switch opened → tamper flag set.', 'err');
         log.add('Relay tripped. Supply disconnected.', 'err');
         log.add('Event written to EEPROM with a timestamp.', 'am');
-        rPart.set('<strong style="color:#ff5d6c">Tamper detected.</strong><br>The micro-switch ' +
+        rPart.set('<strong class="text-danger">Tamper detected.</strong><br>The micro-switch ' +
                   'under the cover opened. The meter trips its relay immediately and logs the ' +
                   'event. Only the utility can clear it.');
       } else {
@@ -274,7 +274,7 @@ export default {
     house.setPower(true, 0.85);
     ciu.setScreen('READY');
     PARTS.mcu.focus();
-    rPart.set(`<strong style="color:#fff">${PARTS.mcu.label}</strong><br>${PARTS.mcu.text}`);
+    rPart.set(`<strong>${PARTS.mcu.label}</strong><br>${PARTS.mcu.text}`);
     ui.data(PARTS.mcu.data);
     log.add('Installation energised. Relay closed, 12.4 kWh remaining.', 'ok');
   }

@@ -50,13 +50,13 @@ export default {
     const makeParty = (x, title, sub, color) => {
       const g = new THREE.Group();
       g.position.set(x, 0, 0);
-      const pad = makeBox(2.8, 0.3, 2.0, 0x1b2738, { wireColor: color, wireOpacity: 0.35 });
+      const pad = makeBox(2.8, 0.3, 2.0, 0x282a30, { wireColor: color, wireOpacity: 0.35 });
       pad.position.y = -1.3;
       const tower = makeShell(1.7, 2.0, 1.2, color, 0.08);
       tower.position.y = -0.15;
       const t1 = makeLabel(title, { height: 0.24, color: '#ffffff', weight: 700 });
       t1.position.y = 1.3;
-      const t2 = makeLabel(sub, { height: 0.17, color: '#8fa3bd' });
+      const t2 = makeLabel(sub, { height: 0.17, color: '#a19e96' });
       t2.position.y = 1.02;
       g.add(pad, tower, t1, t2);
       stage.add(g);
@@ -76,7 +76,7 @@ export default {
     const channel = makeConduit([-3.4, -0.1, 0], [3.4, -0.1, 0], PAL.steel);
     stage.add(channel);
     const chLabel = makeLabel('UNTRUSTED CHANNEL  ·  anyone can read what crosses here',
-      { height: 0.17, mono: true, color: '#647a99' });
+      { height: 0.17, mono: true, color: '#86837b' });
     chLabel.position.set(0, -0.7, 0);
     stage.add(chLabel);
 
@@ -89,13 +89,13 @@ export default {
     pupil.position.z = 0.22;
     eve.add(eyeBall, pupil, makeGlow(PAL.red, 1.1));
     eve.position.set(0, -2.0, 1.3);
-    const eveLabel = makeLabel('eavesdropper', { height: 0.17, mono: true, color: '#ff9aa4' });
+    const eveLabel = makeLabel('eavesdropper', { height: 0.17, mono: true, color: '#f3a19c' });
     eveLabel.position.set(0, -2.5, 1.3);
     stage.add(eve, eveLabel);
 
     // ── The travelling box ─────────────────────────────────────────────
     const parcel = new THREE.Group();
-    const crate = makeBox(0.9, 0.7, 0.7, 0x243449, { wireColor: PAL.amber, wireOpacity: 0.7 });
+    const crate = makeBox(0.9, 0.7, 0.7, 0x30333a, { wireColor: PAL.amber, wireOpacity: 0.7 });
     const lock = makeLock(PAL.amber);
     lock.group.position.set(0, 0, 0.42);
     lock.group.scale.setScalar(0.6);

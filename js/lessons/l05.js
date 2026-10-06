@@ -56,7 +56,7 @@ export default {
     const vault = makeShell(2.1, 2.3, 1.6, PAL.green, 0.08);
     const ownerLabel = makeLabel('OWNER', { height: 0.24, color: '#ffffff', weight: 700 });
     ownerLabel.position.y = 1.55;
-    const ownerSub = makeLabel('keeps the private key', { height: 0.17, color: '#8fa3bd' });
+    const ownerSub = makeLabel('keeps the private key', { height: 0.17, color: '#a19e96' });
     ownerSub.position.y = 1.28;
     owner.add(vault, ownerLabel, ownerSub);
     const privKey = makeKeyIcon(PAL.green, 'PRIVATE');
@@ -69,8 +69,8 @@ export default {
     [[-5.2, 1.9], [-5.8, -0.1], [-5.2, -2.1]].forEach(([x, y], i) => {
       const g = new THREE.Group();
       g.position.set(x, y, 0);
-      const b = makeBox(1.0, 0.8, 0.8, 0x1b2738, { wireColor: PAL.cyan, wireOpacity: 0.4 });
-      const l = makeLabel(['SENDER A', 'SENDER B', 'SENDER C'][i], { height: 0.16, color: '#9fb0c8' });
+      const b = makeBox(1.0, 0.8, 0.8, 0x282a30, { wireColor: PAL.cyan, wireOpacity: 0.4 });
+      const l = makeLabel(['SENDER A', 'SENDER B', 'SENDER C'][i], { height: 0.16, color: '#b3b0a8' });
       l.position.y = 0.66;
       const pk = makeKeyIcon(PAL.cyan);
       pk.scale.setScalar(0.42);
@@ -85,7 +85,7 @@ export default {
     pubKey.position.set(-0.4, 2.6, 0);
     pubKey.scale.setScalar(1.05);
     stage.add(pubKey);
-    const pubNote = makeLabel('published — anyone may have a copy', { height: 0.18, color: '#7bffe8' });
+    const pubNote = makeLabel('published — anyone may have a copy', { height: 0.18, color: '#a9cdf2' });
     pubNote.position.set(0, 3.3, 0);
     stage.add(pubNote);
 
@@ -94,7 +94,7 @@ export default {
     tether.speed = 0.22;
     stage.add(tether.group);
     const tetherLabel = makeLabel('mathematically linked · n = p × q',
-      { height: 0.17, mono: true, color: '#b9a4f5' });
+      { height: 0.17, mono: true, color: '#c7b5e8' });
     tetherLabel.position.set(2.4, 2.1, 0);
     stage.add(tetherLabel);
 

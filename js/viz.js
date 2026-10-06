@@ -13,11 +13,11 @@ export function makeCharStrip(opts = {}) {
   const tiles = [];
   for (let i = 0; i < n; i++) {
     const t = new THREE.Group();
-    const box = makeBox(w, w, 0.14, opts.color ?? 0x16202e, {
+    const box = makeBox(w, w, 0.14, opts.color ?? 0x23252a, {
       roughness: 0.55, wireColor: opts.wireColor ?? PAL.cyan, wireOpacity: 0.3
     });
     const face = makeTextPlane(' ', {
-      height: w * 0.62, mono: true, color: opts.textColor ?? '#e6edf7', weight: 600
+      height: w * 0.62, mono: true, color: opts.textColor ?? '#ebe9e4', weight: 600
     });
     face.position.z = 0.081;
     t.add(box, face);
@@ -38,7 +38,7 @@ export function makeCharStrip(opts = {}) {
         const code = ch.charCodeAt(0);
         const printable = code >= 32 && code <= 126;
         tiles[i].userData.face.setText(printable ? ch : '·');
-        const c = color ?? (printable ? (opts.color ?? 0x16202e) : 0x3a1f2a);
+        const c = color ?? (printable ? (opts.color ?? 0x23252a) : 0x3a1f2a);
         tiles[i].userData.box.material.color.setHex(i === highlight ? PAL.amber : c);
         tiles[i].userData.box.material.emissive.setHex(i === highlight ? 0x5a3a10 : 0x000000);
       }
@@ -123,7 +123,7 @@ export function makeKeyIcon(color = PAL.amber, label = null) {
   }
   group.add(makeGlow(color, 1.05));
   if (label) {
-    const l = makeLabel(label, { height: 0.17, mono: true, color: '#cfe3ff' });
+    const l = makeLabel(label, { height: 0.17, mono: true, color: '#d2e3f5' });
     l.position.set(0.35, 0.42, 0);
     group.add(l);
   }
@@ -140,7 +140,7 @@ export function makeLock(color = PAL.cyan) {
   const body = makeBox(0.62, 0.5, 0.3, color, { metalness: 0.6, roughness: 0.35, wire: false });
   const shackle = new THREE.Mesh(
     new THREE.TorusGeometry(0.19, 0.045, 8, 22, Math.PI),
-    mat(0xc8d6e8, { metalness: 0.85, roughness: 0.25 })
+    mat(0xd6d3cc, { metalness: 0.85, roughness: 0.25 })
   );
   shackle.position.y = 0.25;
   group.add(body, shackle);
@@ -159,14 +159,14 @@ export function makeLock(color = PAL.cyan) {
 export function makeMCU() {
   const group = new THREE.Group();
 
-  const body = makeBox(1.9, 2.5, 0.95, 0x243449, { roughness: 0.62, metalness: 0.25,
+  const body = makeBox(1.9, 2.5, 0.95, 0x30333a, { roughness: 0.62, metalness: 0.25,
     wireColor: PAL.cyan, wireOpacity: 0.22 });
   group.add(body);
 
   // LCD
   const screen = makeBox(1.35, 0.62, 0.06, 0x08110f, { wire: false, roughness: 0.3 });
   screen.position.set(0, 0.62, 0.5);
-  const screenText = makeTextPlane('0.0 kWh', { height: 0.24, mono: true, color: '#7bffe8', weight: 700 });
+  const screenText = makeTextPlane('0.0 kWh', { height: 0.24, mono: true, color: '#a9cdf2', weight: 700 });
   screenText.position.set(0, 0.62, 0.54);
   group.add(screen, screenText);
 
@@ -185,12 +185,12 @@ export function makeMCU() {
   });
 
   // terminal cover + screws
-  const cover = makeBox(1.9, 0.78, 0.5, 0x1b2738, { roughness: 0.7, wireOpacity: 0.18 });
+  const cover = makeBox(1.9, 0.78, 0.5, 0x282a30, { roughness: 0.7, wireOpacity: 0.18 });
   cover.position.set(0, -1.0, 0.28);
   group.add(cover);
   for (const x of [-0.7, 0.7]) {
     const s = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.08, 10),
-      mat(0x8fa3bd, { metalness: 0.9, roughness: 0.3 }));
+      mat(0xa19e96, { metalness: 0.9, roughness: 0.3 }));
     s.rotation.x = Math.PI / 2;
     s.position.set(x, -1.0, 0.55);
     group.add(s);
@@ -200,12 +200,12 @@ export function makeMCU() {
   const seal = makeLine([[-0.7, -1.0, 0.58], [0, -1.2, 0.62], [0.7, -1.0, 0.58]], PAL.amber, 0.65);
   group.add(seal);
 
-  const cap = makeLabel('MCU · Measurement Control Unit', { height: 0.2, color: '#9fb0c8' });
+  const cap = makeLabel('MCU · Measurement Control Unit', { height: 0.2, color: '#b3b0a8' });
   cap.position.set(0, 1.62, 0);
   group.add(cap);
 
   const sub = makeLabel('sealed · pole-mounted · holds the Decoder Key', {
-    height: 0.15, color: '#647a99'
+    height: 0.15, color: '#86837b'
   });
   sub.position.set(0, 1.38, 0);
   group.add(sub);
@@ -237,13 +237,13 @@ export function makeMCU() {
 
 export function makeCIU() {
   const group = new THREE.Group();
-  const body = makeBox(1.5, 2.0, 0.36, 0x2c3c52, { roughness: 0.6,
+  const body = makeBox(1.5, 2.0, 0.36, 0x383b43, { roughness: 0.6,
     wireColor: PAL.violet, wireOpacity: 0.26 });
   group.add(body);
 
   const screen = makeBox(1.18, 0.5, 0.05, 0x07120f, { wire: false });
   screen.position.set(0, 0.66, 0.2);
-  const screenText = makeTextPlane('READY', { height: 0.2, mono: true, color: '#7bffe8', weight: 700 });
+  const screenText = makeTextPlane('READY', { height: 0.2, mono: true, color: '#a9cdf2', weight: 700 });
   screenText.position.set(0, 0.66, 0.235);
   group.add(screen, screenText);
 
@@ -253,8 +253,8 @@ export function makeCIU() {
   glyphs.forEach((g, i) => {
     const col = i % 3, row = Math.floor(i / 3);
     const k = new THREE.Group();
-    const kb = makeBox(0.3, 0.22, 0.09, 0x415872, { roughness: 0.55, wire: false });
-    const kt = makeTextPlane(g, { height: 0.13, mono: true, color: '#dbe7f7', weight: 700 });
+    const kb = makeBox(0.3, 0.22, 0.09, 0x4d5059, { roughness: 0.55, wire: false });
+    const kt = makeTextPlane(g, { height: 0.13, mono: true, color: '#e3e1dc', weight: 700 });
     kt.position.z = 0.05;
     k.add(kb, kt);
     k.position.set((col - 1) * 0.37, 0.16 - row * 0.3, 0.2);
@@ -263,7 +263,7 @@ export function makeCIU() {
     keys.push(k);
   });
 
-  const cap = makeLabel('CIU · Customer Interface Unit', { height: 0.19, color: '#9fb0c8' });
+  const cap = makeLabel('CIU · Customer Interface Unit', { height: 0.19, color: '#b3b0a8' });
   cap.position.set(0, 1.34, 0);
   group.add(cap);
 
@@ -282,10 +282,10 @@ export function makeCIU() {
         p.t += dt * 6;
         const d = Math.sin(Math.min(p.t, Math.PI));
         p.k.position.z = p.k.userData.base - d * 0.05;
-        p.k.userData.mesh.material.color.setHex(d > 0.2 ? PAL.cyan : 0x415872);
+        p.k.userData.mesh.material.color.setHex(d > 0.2 ? PAL.cyan : 0x4d5059);
         if (p.t >= Math.PI) {
           p.k.position.z = p.k.userData.base;
-          p.k.userData.mesh.material.color.setHex(0x415872);
+          p.k.userData.mesh.material.color.setHex(0x4d5059);
           press.splice(i, 1);
         }
       }
@@ -307,7 +307,7 @@ export function makePole(height = 6) {
   group.add(pole, arm);
   for (const x of [-1.05, 0, 1.05]) {
     const ins = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.12, 0.2, 10),
-      mat(0x6d7a88, { roughness: 0.4 }));
+      mat(0x7a7770, { roughness: 0.4 }));
     ins.position.set(x, height - 2.33, 0);
     group.add(ins);
   }
@@ -317,14 +317,14 @@ export function makePole(height = 6) {
 /** A simple house shell for the CIU to live in. */
 export function makeHouse() {
   const group = new THREE.Group();
-  const walls = makeBox(4.2, 2.6, 3.2, 0x1d2a3c, {
+  const walls = makeBox(4.2, 2.6, 3.2, 0x2a2c32, {
     opacity: 0.22, wireColor: PAL.violet, wireOpacity: 0.4,
     extra: { side: THREE.DoubleSide, depthWrite: false }
   });
   walls.position.y = -0.9;
   const roofGeo = new THREE.ConeGeometry(3.2, 1.2, 4);
   const roof = new THREE.Mesh(roofGeo, new THREE.MeshStandardMaterial({
-    color: 0x2a3a52, roughness: 0.8, transparent: true, opacity: 0.4, side: THREE.DoubleSide
+    color: 0x363941, roughness: 0.8, transparent: true, opacity: 0.4, side: THREE.DoubleSide
   }));
   roof.rotation.y = Math.PI / 4;
   roof.position.y = 1.0;
@@ -359,8 +359,8 @@ export function makeTokenDisplay(opts = {}) {
   for (let i = 0; i < 20; i++) {
     const g = Math.floor(i / 4);
     const t = new THREE.Group();
-    const box = makeBox(w, w * 1.3, 0.1, 0x111c29, { wireColor: PAL.cyan, wireOpacity: 0.3 });
-    const face = makeTextPlane('0', { height: w * 0.7, mono: true, color: '#e6edf7', weight: 700 });
+    const box = makeBox(w, w * 1.3, 0.1, 0x1e2024, { wireColor: PAL.cyan, wireOpacity: 0.3 });
+    const face = makeTextPlane('0', { height: w * 0.7, mono: true, color: '#ebe9e4', weight: 700 });
     face.position.z = 0.06;
     t.add(box, face);
     t.position.x = (i - 9.5) * (w + 0.05) + g * 0.12 - 0.24;
@@ -370,11 +370,11 @@ export function makeTokenDisplay(opts = {}) {
   }
   return {
     group, tiles,
-    set(digits, { from = 0, color = 0x111c29 } = {}) {
+    set(digits, { from = 0, color = 0x1e2024 } = {}) {
       const d = String(digits).padStart(20, '0').slice(-20);
       tiles.forEach((t, i) => {
         t.userData.face.setText(d[i]);
-        t.userData.box.material.color.setHex(i >= from ? color : 0x111c29);
+        t.userData.box.material.color.setHex(i >= from ? color : 0x1e2024);
       });
     },
     highlight(fromIdx, toIdx, color = PAL.amber) {

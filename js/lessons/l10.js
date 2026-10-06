@@ -97,7 +97,7 @@ export default {
     const tok = makeTokenDisplay({ tile: 0.3 });
     tok.group.position.set(0, 3.5, 0);
     stage.add(tok.group);
-    const tokLabel = makeLabel('TOKEN AS TYPED', { height: 0.17, color: '#9fb0c8' });
+    const tokLabel = makeLabel('TOKEN AS TYPED', { height: 0.17, color: '#b3b0a8' });
     tokLabel.position.set(0, 3.95, 0);
     stage.add(tokLabel);
 
@@ -107,13 +107,13 @@ export default {
       const y = 2.35 - i * 1.15;
       const grp = new THREE.Group();
       grp.position.set(0, y, 0);
-      const box = makeBox(4.3, 0.82, 0.3, 0x111c29, { wireColor: PAL.steel, wireOpacity: 0.5 });
+      const box = makeBox(4.3, 0.82, 0.3, 0x1e2024, { wireColor: PAL.steel, wireOpacity: 0.5 });
       const lbl = makeLabel(g.label, { height: 0.19, mono: true, color: '#ffffff', weight: 700 });
       lbl.position.set(-0.55, 0.13, 0.2);
-      lbl.material.color.set('#5a6d88');
+      lbl.material.color.set('#7f7c74');
       const hint = makeLabel(g.hint, { height: 0.14, mono: true, color: '#ffffff' });
       hint.position.set(-0.55, -0.15, 0.2);
-      hint.material.color.set('#41526b');
+      hint.material.color.set('#6b6861');
       const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 12),
         new THREE.MeshStandardMaterial({ color: PAL.steel, emissive: 0x000000 }));
       lamp.position.set(1.85, 0, 0.22);
@@ -142,18 +142,18 @@ export default {
 
     const verdict = makeLabel('', { height: 0.3, color: '#ffffff', weight: 700 });
     verdict.position.set(0, -3.4, 0);
-    verdict.material.color.set('#647a99');
+    verdict.material.color.set('#86837b');
     stage.add(verdict);
 
     // ── Gate rendering ─────────────────────────────────────────────────
     const resetGates = () => {
       gateMeshes.forEach(g => {
-        g.box.material.color.setHex(0x111c29);
+        g.box.material.color.setHex(0x1e2024);
         g.box.children[0].material.color.setHex(PAL.steel);
         g.lamp.material.color.setHex(PAL.steel);
         g.lamp.material.emissive.setHex(0x000000);
         g.glow.material.opacity = 0;
-        g.lbl.material.color.set('#5a6d88');
+        g.lbl.material.color.set('#7f7c74');
       });
       verdict.setText('');
       pip.visible = false;
@@ -169,7 +169,7 @@ export default {
       g.lamp.material.emissiveIntensity = 1.8;
       g.glow.material.color.setHex(c);
       g.glow.material.opacity = 0.9;
-      g.lbl.material.color.set(ok ? '#4ade80' : '#ff5d6c');
+      g.lbl.material.color.set(ok ? '#62c08a' : '#ec5f59');
     };
 
     const syncMeter = () => {
@@ -236,13 +236,13 @@ export default {
             verdict.setText(result.kind === 'credit'
               ? `✓ ACCEPTED — ${result.kwh.toFixed(1)} kWh credited`
               : '✓ ACCEPTED');
-            verdict.material.color.set('#4ade80');
+            verdict.material.color.set('#62c08a');
             rResult.set(result.kind === 'credit'
               ? `Accepted. +${result.kwh.toFixed(1)} kWh` : 'Accepted.', 'ok');
             ciu.setScreen('ACCEPTED');
           } else {
             verdict.setText('✗ REJECTED');
-            verdict.material.color.set('#ff5d6c');
+            verdict.material.color.set('#ec5f59');
             rResult.set(result.reason, 'err');
             ciu.setScreen('REJECT');
             // shake

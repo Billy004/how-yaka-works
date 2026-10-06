@@ -1,0 +1,9 @@
+# Make browsers re-check the app's files on every load (a cheap 304 when unchanged,
+# thanks to ETag), so an update can never leave an old module running against a new page.
+# Needs Apache's headers_module (WAMP tray → Apache → Apache modules → headers_module).
+# Without it this block is skipped, not an error.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html|js|css|json)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>

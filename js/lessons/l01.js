@@ -48,8 +48,8 @@ export default {
   `,
 
   build({ stage, ui }) {
-    const plain  = makeCharStrip({ color: 0x16202e, wireColor: PAL.cyan });
-    const cipher = makeCharStrip({ color: 0x2a1830, wireColor: PAL.violet, textColor: '#e9c8ff' });
+    const plain  = makeCharStrip({ color: 0x23252a, wireColor: PAL.cyan });
+    const cipher = makeCharStrip({ color: 0x2a2233, wireColor: PAL.violet, textColor: '#e6d6f5' });
     plain.group.position.y = 2.45;
     cipher.group.position.y = -2.45;
     stage.add(plain.group, cipher.group);
@@ -65,9 +65,9 @@ export default {
     keyLabel.position.set(-3.3, 0.85, 0.4);
     stage.add(keyLabel);
 
-    const labIn  = makeLabel('PLAINTEXT — anyone can read this', { height: 0.2, color: '#9fb0c8' });
+    const labIn  = makeLabel('PLAINTEXT — anyone can read this', { height: 0.2, color: '#b3b0a8' });
     labIn.position.set(0, 3.15, 0);
-    const labOut = makeLabel('CIPHERTEXT — safe to send anywhere', { height: 0.2, color: '#c9a8e8' });
+    const labOut = makeLabel('CIPHERTEXT — safe to send anywhere', { height: 0.2, color: '#cdb8e6' });
     labOut.position.set(0, -3.15, 0);
     stage.add(labIn, labOut);
 
@@ -84,7 +84,7 @@ export default {
       const shown = mode === 'encrypt' ? out : xorString(out, k);
       plain.set(msg);
       cipher.set(mode === 'encrypt' ? showRaw(out) : shown,
-                 { color: mode === 'encrypt' ? 0x2a1830 : 0x16202e });
+                 { color: mode === 'encrypt' ? 0x2a2233 : 0x23252a });
       engine.setColor(mode === 'encrypt' ? PAL.cyan : PAL.green);
       engine.caption.setText(mode === 'encrypt' ? 'XOR CIPHER →' : '← XOR CIPHER');
       labOut.setText(mode === 'encrypt'
