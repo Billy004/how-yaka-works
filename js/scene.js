@@ -2,7 +2,7 @@
 // primitives (labels, panels, wires, flowing particles) the lessons draw with.
 //
 // The look is a studio-lit graphite "display": image-based light from a soft room
-// (RoomEnvironment), a warm key with cool and warm rims, filmic tone mapping,
+// (RoomEnvironment), a warm key with cool and warm rims, colour-true tone mapping,
 // bevelled forms instead of sharp boxes, and soft contact shadows on a lit floor —
 // the techniques polished three.js work leans on. QUALITY sizes it for the device.
 
@@ -78,8 +78,10 @@ export class Stage {
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, gfx.dpr));
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    // Linear, not filmic: compared side by side on L09, ACES/AgX/Reinhard all washed the
+    // semantic colours (blue data, amber keys, green OK) towards pastel or mud.
+    this.renderer.toneMapping = THREE.LinearToneMapping;
+    this.renderer.toneMappingExposure = 0.92;
     // resize() passes updateStyle=false, so CSS must size the canvas. Without this the
     // canvas is drawn at devicePixelRatio × its container and spills over the side panel.
     Object.assign(this.renderer.domElement.style, { display: 'block', width: '100%', height: '100%' });
