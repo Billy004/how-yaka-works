@@ -1,6 +1,6 @@
 import { PAL, THREE, makeLabel, makeBox, makeFlow, linePath, Timeline, easeInOut, makeGlow }
   from '../scene.js';
-import { makeCIU, makeMCU, makeTokenDisplay, makeHouse } from '../viz.js';
+import { makeCIU, makeMCU, makeTokenDisplay, makeHouse, makeGround, makeChecklist } from '../viz.js';
 import {
   Meter, deriveDecoderKey, vendingKeyFromPhrase, buildCreditToken,
   tidFromDate, dateFromTid, normaliseDigits
@@ -21,6 +21,7 @@ export default {
   title: 'The meter decides',
   subtitle: 'Five checks, no network — and the one that stops you reusing yesterday\'s token.',
   stageOpts: { camera: [0, 0.6, 15], target: [0, 0.2, 0], gridY: -4.2, maxDistance: 32 },
+  hint: 'Click the keypad to type a token, then ↵ · drag to orbit',
 
   learn: `
     <h3>Twenty digits arrive. Now what?</h3>
@@ -79,56 +80,48 @@ export default {
     });
 
     // ── Scene ──────────────────────────────────────────────────────────
-    const ciu = makeCIU();
-    ciu.group.position.set(-5.4, 0.2, 0);
-    ciu.group.scale.setScalar(0.92);
+    const drn = /^\d{11}$/.test(Store.get('drn')) ? Store.get('drn') : '04122334455';
+    const CIU_X = -5.4;
+    const ciu = makeCIU({ drn });
+    ciu.group.position.set(CIU_X, 0.55, 0.3);
+    ciu.group.scale.setScalar(1.2);
+    ciu.caption?.scale.multiplyScalar(1.4);
     stage.add(ciu.group);
 
-    const mcu = makeMCU();
-    mcu.group.position.set(5.4, 0.4, 0);
-    mcu.group.scale.setScalar(0.92);
+    const mcu = makeMCU({ drn });
+    mcu.group.position.set(5.3, 0.75, 0);
+    mcu.group.scale.setScalar(1.0);
+    mcu.caption?.scale.multiplyScalar(1.4);
+    if (mcu.sub) mcu.sub.visible = false;
     stage.add(mcu.group);
 
+    // the house the keypad belongs to, on its own small plot; its lamp shows the relay
+    const plot = makeGround({ width: 3.4, depth: 2.9, thickness: 0.3, radius: 0.35, seed: 5,
+      zones: [{ kind: 'murram', rect: [-1.25, -1.15, 1.35, 1.2], r: 0.4 }, { kind: 'ao', rect: [-0.95, -0.85, 0.95, 0.85], r: 0.05 }] });
+    plot.group.position.set(CIU_X, -3.0, -1.0);
     const house = makeHouse();
-    house.group.position.set(-5.4, -2.6, -1.2);
-    house.group.scale.setScalar(0.85);
-    stage.add(house.group);
+    house.group.scale.setScalar(0.45);
+    plot.group.add(house.group);
+    stage.add(plot.group);
 
-    const tok = makeTokenDisplay({ tile: 0.3 });
-    tok.group.position.set(0, 3.5, 0);
+    const tok = makeTokenDisplay({ tile: 0.3, label: 'TOKEN AS TYPED' });
+    tok.group.position.set(0, 4.55, 0);
     stage.add(tok.group);
-    const tokLabel = makeLabel('TOKEN AS TYPED', { height: 0.17, color: '#b3b0a8' });
-    tokLabel.position.set(0, 3.95, 0);
-    stage.add(tokLabel);
 
-    // gate column
-    const gateMeshes = [];
-    GATES.forEach((g, i) => {
-      const y = 2.35 - i * 1.15;
-      const grp = new THREE.Group();
-      grp.position.set(0, y, 0);
-      const box = makeBox(4.3, 0.82, 0.3, 0x1e2024, { wireColor: PAL.steel, wireOpacity: 0.5 });
-      const lbl = makeLabel(g.label, { height: 0.19, mono: true, color: '#ffffff', weight: 700 });
-      lbl.position.set(-0.55, 0.13, 0.2);
-      lbl.material.color.set('#7f7c74');
-      const hint = makeLabel(g.hint, { height: 0.14, mono: true, color: '#ffffff' });
-      hint.position.set(-0.55, -0.15, 0.2);
-      hint.material.color.set('#6b6861');
-      const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 12),
-        new THREE.MeshStandardMaterial({ color: PAL.steel, emissive: 0x000000 }));
-      lamp.position.set(1.85, 0, 0.22);
-      const glow = makeGlow(PAL.green, 0.8);
-      glow.position.copy(lamp.position);
-      glow.material.opacity = 0;
-      grp.add(box, lbl, hint, lamp, glow);
-      stage.add(grp);
-      gateMeshes.push({ grp, box, lbl, hint, lamp, glow });
+    // the five checks, as the meter's own instrument panel; rows sit at y = 2.35 − 1.15 i
+    const CHECKS = ['Twenty digits?', 'Decrypt with its key', 'Checksum matches?', 'TID is newer?', 'Credit, close relay'];
+    const panel = makeChecklist({
+      title: 'Inside the MCU: five checks',
+      rows: GATES.map((g, i) => ({ label: `${i + 1} · ${CHECKS[i]}`, hint: g.hint }))
     });
+    panel.group.position.y = 2.35 - panel.rowY(0);
+    stage.add(panel.group);
+    const gateY = (i) => panel.group.position.y + panel.rowY(i);
 
-    const plcFlow = makeFlow(linePath([-4.6, 0.2, 0.4], [-2.3, 2.35, 0.2]), 10, PAL.violet, 0.055);
+    const plcFlow = makeFlow(linePath([CIU_X + 0.9, 0.85, 0.45], [-2.15, 2.35, 0.2]), 10, PAL.violet, 0.055);
     plcFlow.speed = 0.5; plcFlow.active = false;
     stage.add(plcFlow.group);
-    const outFlow = makeFlow(linePath([2.3, -2.25, 0.2], [4.6, 0.4, 0.4]), 8, PAL.green, 0.055);
+    const outFlow = makeFlow(linePath([2.15, -2.25, 0.2], [4.45, 0.2, 0.4]), 8, PAL.green, 0.055);
     outFlow.speed = 0.5; outFlow.active = false;
     stage.add(outFlow.group);
 
@@ -141,35 +134,20 @@ export default {
     stage.add(pip);
 
     const verdict = makeLabel('', { height: 0.3, color: '#ffffff', weight: 700 });
-    verdict.position.set(0, -3.4, 0);
+    verdict.position.set(0, -3.75, 0);
     verdict.material.color.set('#86837b');
     stage.add(verdict);
 
     // ── Gate rendering ─────────────────────────────────────────────────
     const resetGates = () => {
-      gateMeshes.forEach(g => {
-        g.box.material.color.setHex(0x1e2024);
-        g.box.children[0].material.color.setHex(PAL.steel);
-        g.lamp.material.color.setHex(PAL.steel);
-        g.lamp.material.emissive.setHex(0x000000);
-        g.glow.material.opacity = 0;
-        g.lbl.material.color.set('#7f7c74');
-      });
+      panel.reset();
       verdict.setText('');
       pip.visible = false;
     };
 
     const markGate = (i, ok) => {
-      const g = gateMeshes[i];
-      const c = ok ? PAL.green : PAL.red;
-      g.box.material.color.setHex(ok ? 0x0e2419 : 0x2a1119);
-      g.box.children[0].material.color.setHex(c);
-      g.lamp.material.color.setHex(c);
-      g.lamp.material.emissive.setHex(c);
-      g.lamp.material.emissiveIntensity = 1.8;
-      g.glow.material.color.setHex(c);
-      g.glow.material.opacity = 0.9;
-      g.lbl.material.color.set(ok ? '#62c08a' : '#ec5f59');
+      panel.set(i, ok ? 'pass' : 'fail');
+      if (!ok) for (let j = i + 1; j < GATES.length; j++) panel.set(j, 'skip');
     };
 
     const syncMeter = () => {
@@ -188,16 +166,19 @@ export default {
 
     // ── Feeding a token ────────────────────────────────────────────────
     let busy = false;
-    const feed = (digits) => {
+    const feed = (digits, { typed = false } = {}) => {
       if (busy) return;
       const d = normaliseDigits(digits);
       resetGates();
       tok.set(d.padEnd(20, '0').slice(0, 20));
       busy = true;
 
-      // type it on the keypad
-      [...d.slice(0, 20)].forEach((ch, i) => setTimeout(() => ciu.press(ch), i * 45));
-      ciu.setScreen('ENTER…');
+      // type it on the keypad, unless the learner just did
+      if (typed) ciu.setScreen('CHECKING');
+      else {
+        ciu.setScreen('ENTER…');
+        [...d.slice(0, 20)].forEach((ch, i) => setTimeout(() => ciu.press(ch), i * 45));
+      }
       plcFlow.active = true;
 
       const tidBefore = meter.lastTid;
@@ -213,9 +194,10 @@ export default {
           if (idx >= GATES.length || stopped) { finish(); return; }
           const g = GATES[idx];
           const st = stepByKey[g.key];
-          const yTo = gateMeshes[idx].grp.position.y;
+          const yFrom = idx ? gateY(idx - 1) : gateY(0) + 0.9, yTo = gateY(idx);
+          panel.set(idx, 'run');
           tl.run(0.35, (u) => {
-            pip.position.set(0, 3.1 - easeInOut(u) * (3.1 - yTo), 0.45);
+            pip.position.set(-2.75, yFrom - easeInOut(u) * (yFrom - yTo), 0.3);
           }, () => {
             if (!st) { stopped = true; finish(); return; }
             markGate(idx, st.ok);
@@ -247,7 +229,7 @@ export default {
             ciu.setScreen('REJECT');
             // shake
             tl.run(0.4, (u) => {
-              ciu.group.position.x = -5.4 + Math.sin(u * 40) * 0.09 * (1 - u);
+              ciu.group.position.x = CIU_X + Math.sin(u * 40) * 0.09 * (1 - u);
             });
           }
           syncMeter();
@@ -277,6 +259,13 @@ export default {
       onInput: (v) => { tok.set(normaliseDigits(v).padEnd(20, '0').slice(0, 20)); }
     });
     ui.button('⌨  Enter token', () => feed(tokCtl.get()));
+    ui.note('Or type it on the keypad in the 3D view: click the keys, then ↵.');
+
+    // the keypad in the scene types into the same field
+    ciu.enableInput(stage, {
+      onKey: (glyph, entry) => { tokCtl.setQuiet(entry); tok.set(entry.padEnd(20, '0').slice(0, 20)); },
+      onEnter: (entry) => feed(entry, { typed: true })
+    });
 
     ui.buttonRow([
       { label: 'Use last vended', variant: 'ghost', onClick: () => {
@@ -353,10 +342,10 @@ export default {
     const log = ui.log();
 
     stage.onTick((dt, t) => {
-      ciu.tick(dt, t); mcu.tick(dt, t);
+      ciu.tick(dt, t); mcu.tick(dt, t); panel.tick(dt);
       plcFlow.tick(dt); outFlow.tick(dt);
       if (pip.visible) pip.rotation.set(t * 2, t * 1.6, 0);
-      tok.group.position.y = 3.5 + Math.sin(t * 1.2) * 0.03;
+      tok.group.position.y = 4.55 + Math.sin(t * 1.2) * 0.03;
     });
 
     syncMeter();

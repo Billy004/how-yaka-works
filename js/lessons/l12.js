@@ -1,7 +1,6 @@
 import { PAL, THREE, makeLabel, makeBox, makeShell, makeFlow, linePath, arcPath, makeConduit,
   makeGlow, Timeline, easeInOut } from '../scene.js';
-import { makeMCU, makeCIU, makePole, makeHouse, makeTokenDisplay, makeEngine, makeKeyIcon }
-  from '../viz.js';
+import { makeSite, makeTokenDisplay, makeEngine, makeKeyIcon, makePhone } from '../viz.js';
 import {
   Meter, deriveDecoderKey, vendingKeyFromPhrase, buildCreditToken,
   tidFromDate, dateFromTid, normaliseDigits
@@ -13,7 +12,8 @@ export default {
   id: 'l12', act: 3, num: 12,
   title: 'The whole thing, running',
   subtitle: 'Mobile money to light bulb, with every cryptographic step visible.',
-  stageOpts: { camera: [0, 3.4, 22], target: [0, 1.2, 0], gridY: -2.6, maxDistance: 55, minDistance: 6 },
+  stageOpts: { camera: [0.8, 3.6, 19.5], target: [0.6, 0.9, 0], gridY: -2.6, maxDistance: 55, minDistance: 4 },
+  hint: 'Click the keypad inside the house to type a token · drag to orbit',
 
   learn: `
     <h3>Everything you have built, in one machine</h3>
@@ -67,88 +67,80 @@ export default {
     });
 
     /* ── Props ────────────────────────────────────────────────────── */
-    // Phone
-    const phone = new THREE.Group();
-    phone.position.set(-8.4, 0.6, 1.4);
-    const phoneBody = makeBox(1.0, 1.9, 0.12, 0x26282d, { wireColor: PAL.cyan, wireOpacity: 0.4 });
-    const phoneScreen = makeBox(0.86, 1.5, 0.04, 0x07110f, { wire: false });
-    phoneScreen.position.z = 0.08;
-    const phoneText = makeLabel('', { height: 0.14, mono: true, color: '#a9cdf2' });
-    phoneText.position.set(0, 0, 0.13);
-    phone.add(phoneBody, phoneScreen, phoneText);
+    // Anchor points, so the flows below always meet the props they connect.
+    const PHONE = new THREE.Vector3(-6.9, 0.5, 1.4);
+    const SERVER = new THREE.Vector3(-3.9, 1.0, -0.4);
+    const TOKEN = new THREE.Vector3(-3.3, 3.62, 0.2);
+
+    // The customer's phone: mobile money out, the token back by SMS
+    const ph = makePhone();
+    const phone = ph.group;
+    phone.position.copy(PHONE);
+    phone.scale.setScalar(1.2);
     stage.add(phone);
-    const phoneCap = makeLabel('CUSTOMER', { height: 0.19, color: '#b3b0a8' });
-    phoneCap.position.set(-8.4, 1.9, 1.4);
+    const phoneText = { setText: (t) => ph.setText(t) };
+    const phoneCap = makeLabel('CUSTOMER', { height: 0.22, color: '#ebe9e4', bg: 'rgba(22,23,26,0.82)' });
+    phoneCap.position.set(PHONE.x, PHONE.y + 1.55, PHONE.z);
     stage.add(phoneCap);
 
     // Vending server
     const server = new THREE.Group();
-    server.position.set(-4.4, 0.9, 0);
+    server.position.copy(SERVER);
     const rack = makeShell(2.4, 3.0, 1.6, PAL.cyan, 0.07);
-    const srvCap = makeLabel('VENDING SERVER', { height: 0.21, color: '#ffffff', weight: 700 });
-    srvCap.position.y = 1.95;
-    const srvSub = makeLabel('derives the key · builds the token', { height: 0.15, color: '#a19e96' });
-    srvSub.position.y = 1.68;
+    const srvCap = makeLabel('VENDING SERVER', { height: 0.24, color: '#ebe9e4', bg: 'rgba(22,23,26,0.82)' });
+    srvCap.position.y = 1.98;
+    const srvSub = makeLabel('derives the key · builds the token', { height: 0.17, color: '#b3b0a8' });
+    srvSub.position.y = 1.7;
     server.add(rack, srvCap, srvSub);
     stage.add(server);
 
     const srvEngine = makeEngine('', PAL.cyan, [1.5, 1.2, 1.0]);
-    srvEngine.group.position.set(-4.4, 0.7, 0);
+    srvEngine.group.position.copy(SERVER).add(new THREE.Vector3(0, -0.2, 0));
     srvEngine.group.scale.setScalar(0.75);
     stage.add(srvEngine.group);
 
     const srvKey = makeKeyIcon(PAL.red);
     srvKey.scale.setScalar(0.42);
-    srvKey.position.set(-4.9, 2.1, 0.5);
+    srvKey.position.copy(SERVER).add(new THREE.Vector3(-0.5, 1.2, 0.5));
     stage.add(srvKey);
 
-    // Token in the air
-    const tok = makeTokenDisplay({ tile: 0.28 });
-    tok.group.position.set(-0.4, 3.4, 0);
-    tok.group.scale.setScalar(0.92);
+    // Token in the air, as a printed card
+    const tok = makeTokenDisplay({ tile: 0.28, label: 'TOKEN · PUBLIC, UNFORGEABLE, SINGLE-USE' });
+    tok.group.position.copy(TOKEN);
+    tok.group.scale.setScalar(0.85);
     stage.add(tok.group);
-    const tokCap = makeLabel('TOKEN — public, unforgeable, single-use',
-      { height: 0.18, mono: true, color: '#ffffff' });
-    tokCap.material.color.set('#a9cdf2');
-    tokCap.position.set(-0.4, 3.95, 0);
-    stage.add(tokCap);
 
-    // Pole + MCU
-    const pole = makePole(9);
-    pole.position.set(3.4, 0, -0.6);
-    stage.add(pole);
-    const mcu = makeMCU();
-    mcu.group.position.set(3.4, 3.6, 0);
-    mcu.group.scale.setScalar(0.82);
-    stage.add(mcu.group);
-
-    // House + CIU
-    const house = makeHouse();
-    house.group.position.set(7.6, -0.2, 0);
-    house.group.scale.setScalar(1.05);
-    stage.add(house.group);
-    const ciu = makeCIU();
-    ciu.group.position.set(6.4, 0.3, 1.7);
-    ciu.group.scale.setScalar(0.66);
-    stage.add(ciu.group);
-
-    const supply = makeConduit([3.5, 2.6, 0.3], [6.4, 1.0, 0.4], PAL.amber);
-    stage.add(supply);
+    // The installation: pole and MCU, house and CIU, on their own plot of ground
+    stage.enableShadows();
+    const site = makeSite({
+      drn: /^\d{11}$/.test(Store.get('drn')) ? Store.get('drn') : '04122334455',
+      width: 9.6, depth: 6.6, poleX: -2.8, poleZ: -0.8, poleHeight: 6.0, houseX: 1.9, houseZ: -0.4
+    });
+    site.group.position.set(4.1, stage.floorY + site.ground.thickness, 0);
+    stage.add(site.group);
+    site.occluders.forEach(o => stage.occluder(o));
+    const { mcu, ciu, house } = site;
+    const ciuWorld = site.anchors.ciu.clone().add(site.group.position);
+    const ciuHome = ciu.group.position.clone();
 
     /* ── Flows ────────────────────────────────────────────────────── */
-    const payFlow  = makeFlow(arcPath([-7.9, 0.8, 1.2], [-5.4, 0.9, 0.4], 0.9), 9, PAL.green, 0.055);
-    const tokFlow  = makeFlow(arcPath([-3.4, 1.4, 0.3], [-1.0, 3.2, 0], 0.7), 9, PAL.cyan, 0.055);
-    const smsFlow  = makeFlow(arcPath([-1.4, 3.3, 0], [-8.3, 1.5, 1.3], 1.4), 11, PAL.cyan, 0.05);
-    const typeFlow = makeFlow(arcPath([-7.9, 0.6, 1.5], [6.1, 0.6, 1.9], -2.4), 13, PAL.violet, 0.05);
-    const plcFlow  = makeFlow(linePath([6.2, 0.9, 1.7], [3.6, 3.2, 0.4]), 10, PAL.violet, 0.05);
-    const powFlow  = makeFlow(linePath([3.5, 2.6, 0.3], [6.6, 0.6, 0.4]), 10, PAL.amber, 0.05);
-    [payFlow, tokFlow, smsFlow, typeFlow, plcFlow, powFlow].forEach(f => {
+    const payFlow  = makeFlow(arcPath([PHONE.x + 0.55, PHONE.y + 0.3, PHONE.z], [SERVER.x - 1.25, SERVER.y, SERVER.z + 0.4], 0.9), 9, PAL.green, 0.055);
+    const tokFlow  = makeFlow(arcPath([SERVER.x + 1.0, SERVER.y + 0.6, SERVER.z + 0.3], [TOKEN.x + 1.6, TOKEN.y - 0.35, 0], 0.6), 9, PAL.cyan, 0.055);
+    const smsFlow  = makeFlow(arcPath([TOKEN.x - 2.3, TOKEN.y - 0.3, 0], [PHONE.x, PHONE.y + 1.05, PHONE.z], 0.8), 11, PAL.cyan, 0.05);
+    const typeFlow = makeFlow(arcPath([PHONE.x + 0.55, PHONE.y, PHONE.z + 0.1], [ciuWorld.x, ciuWorld.y + 0.1, ciuWorld.z + 0.5], 1.1), 13, PAL.violet, 0.05);
+    [payFlow, tokFlow, smsFlow, typeFlow].forEach(f => {
       f.active = false; f.speed = 0.45; stage.add(f.group);
     });
-    powFlow.speed = 0.7;
+    // these two run along the real cables, in the plot's own coordinates
+    const plcFlow = makeFlow(site.paths.plc, 16, PAL.violet, 0.05);
+    const powFlow = makeFlow(site.paths.supply, 18, PAL.amber, 0.045);
+    plcFlow.active = powFlow.active = false;
+    plcFlow.speed = 0.5;
+    powFlow.speed = 0.2;
+    site.group.add(plcFlow.group, powFlow.group);
 
     const stageLabel = makeLabel('', { height: 0.26, color: '#ffffff', weight: 700 });
-    stageLabel.position.set(-0.4, -1.6, 0);
+    stageLabel.position.set(-3.0, -1.55, 0.5);
     stageLabel.material.color.set('#86837b');
     stage.add(stageLabel);
 
@@ -316,14 +308,20 @@ export default {
     ui.section('Enter a token by hand');
     const tokCtl = ui.text({ label: '20 digits', value: lastDigits,
       onInput: (v) => tok.set(normaliseDigits(v).padEnd(20, '0').slice(0, 20)) });
-    ui.button('Enter it', () => {
-      const d = normaliseDigits(tokCtl.get());
+    const enterByHand = (digits) => {
+      const d = normaliseDigits(digits);
       const r = meter.feed(d);
       r.steps.forEach(s => log.add(`  ${s.step}: ${s.detail}`, s.ok ? 'ok' : 'err'));
       setStage(r.ok ? '✓ ACCEPTED' : '✗ REJECTED', r.ok ? '#62c08a' : '#ec5f59');
       if (!r.ok) log.add(r.reason, 'err');
       syncMeter();
-    }, { variant: 'ghost' });
+    };
+    ui.button('Enter it', () => enterByHand(tokCtl.get()), { variant: 'ghost' });
+    ui.note('Or type it on the keypad inside the house in the 3D view, then press ↵.');
+    ciu.enableInput(stage, {
+      onKey: (glyph, entry) => { tokCtl.setQuiet(entry); tok.set(entry.padEnd(20, '0').slice(0, 20)); },
+      onEnter: (entry) => { tokCtl.setQuiet(entry); enterByHand(entry); }
+    });
 
     ui.section('Try to break it');
     ui.button('Re-enter the last token', () => {
@@ -364,8 +362,9 @@ export default {
       log.add('MCU is on the pole. Relay unchanged. Balance unchanged. Supply unaffected.', 'ok');
       setStage('CIU DESTROYED — SUPPLY UNAFFECTED', '#62c08a');
       tl.run(0.6, (u) => {
-        ciu.group.rotation.z = Math.sin(u * 30) * 0.2 * (1 - u);
-        ciu.group.position.y = 0.3 - u * 0.9;
+        ciu.group.rotation.z = Math.sin(u * 30) * 0.2 * (1 - u) + u * 0.5;
+        ciu.group.position.y = ciuHome.y - u * 1.0;
+        ciu.group.position.z = ciuHome.z + u * 0.25;
       });
       ui.data({
         'destroyed': 'the Customer Interface Unit — keypad and display',
@@ -376,7 +375,7 @@ export default {
       });
     }, { variant: 'danger' });
     ui.button('Put the keypad back', () => {
-      ciu.group.rotation.z = 0; ciu.group.position.y = 0.3;
+      ciu.group.rotation.z = 0; ciu.group.position.copy(ciuHome);
       syncMeter();
     }, { variant: 'ghost' });
 
@@ -396,11 +395,11 @@ export default {
     /* ── Tick ─────────────────────────────────────────────────────── */
     let drain = 0;
     stage.onTick((dt, t) => {
-      mcu.tick(dt, t); ciu.tick(dt, t); srvEngine.tick(dt, t);
+      site.tick(dt, t); srvEngine.tick(dt, t);
       [payFlow, tokFlow, smsFlow, typeFlow, plcFlow, powFlow].forEach(f => f.tick(dt));
       srvKey.userData.tick(dt, t);
       phone.rotation.y = Math.sin(t * 0.5) * 0.12;
-      tok.group.position.y = 3.4 + Math.sin(t * 1.1) * 0.05;
+      tok.group.position.y = TOKEN.y + Math.sin(t * 1.1) * 0.05;
 
       if (running && meter.relay) {
         drain += dt * simSpeed * 0.06;

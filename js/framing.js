@@ -114,12 +114,20 @@ export function frameStage(stage, {
     glide(camera.position.clone(), homeTarget.clone(), toPos, 1150, easeOut);
   }
 
-  const onStart = () => {
+  // The user has the camera only once it actually moves under their hand: a press that
+  // just clicks something in the scene (a part, a key) must not count as orbiting.
+  let pressing = false;
+  const onStart = () => { pressing = true; };
+  const onEnd = () => { pressing = false; };
+  const onChange = () => {
+    if (!pressing) return;
     cancelAnimationFrame(raf);
     animating = false;
     if (!touched) { touched = true; onTouch?.(); }
   };
   controls.addEventListener('start', onStart);
+  controls.addEventListener('end', onEnd);
+  controls.addEventListener('change', onChange);
 
   // Stage registers its own ResizeObserver first, so this one runs after it and
   // gets the final say on aspect and projection.
@@ -136,6 +144,8 @@ export function frameStage(stage, {
       cancelAnimationFrame(raf);
       ro.disconnect();
       controls.removeEventListener('start', onStart);
+      controls.removeEventListener('end', onEnd);
+      controls.removeEventListener('change', onChange);
     }
   };
 }

@@ -3,5 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Interactive three.js lessons on encryption, ending with Uganda's Yaka prepaid meter."
+  "description": "Interactive three.js lessons on encryption, ending with Uganda's Yaka prepaid meter.",
+  "author": "Expedicto Walugembe"
 }

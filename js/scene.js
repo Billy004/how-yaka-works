@@ -46,11 +46,15 @@ export const QUALITY = (() => {
 // Measured (software renderer, L01): image-based light and the contact-shadow pass
 // were the two biggest per-pixel costs. Shadows are blurred anyway, so 256² refreshed
 // every few frames looks the same; the lowest tier drops the environment map too.
+// shadowMap sizes the key light's real shadows in the grounded (diorama) scenes; detail
+// scales scattered props such as grass. The lowest tier keeps only the contact shadow.
 const TIERS = {
-  high:   { dpr: 2,   shadowRes: 256, shadowEvery: 2, env: true },
-  medium: { dpr: 1.5, shadowRes: 256, shadowEvery: 3, env: true },
-  low:    { dpr: 1,   shadowRes: 128, shadowEvery: 8, env: false }
+  high:   { dpr: 2,   shadowRes: 256, shadowEvery: 2, env: true,  shadowMap: 2048, detail: 1 },
+  medium: { dpr: 1.5, shadowRes: 256, shadowEvery: 3, env: true,  shadowMap: 1024, detail: 0.55 },
+  low:    { dpr: 1,   shadowRes: 128, shadowEvery: 8, env: false, shadowMap: 0,    detail: 0.25 }
 };
+/** 0–1: how much scattered detail (grass, stones) a prop should add on this device. */
+export const DETAIL = TIERS[QUALITY].detail;
 const ADAPTIVE = !params.get('quality');
 const GFX_KEY = 'cryptolab.gfx';
 // Downgrades found on one lesson carry to the next, so a slow phone settles once.
@@ -114,6 +118,7 @@ export class Stage {
     const rimWarm = new THREE.DirectionalLight(PAL.amber, 0.7);
     rimWarm.position.set(8, 2, -5);
     this.scene.add(key, rimCool, rimWarm);
+    this.keyLight = key;
 
     this.floorY = opts.gridY ?? -2.2;
     if (opts.grid !== false) {
@@ -136,10 +141,181 @@ export class Stage {
   onTick(fn) { this._ticks.push(fn); return fn; }
 
   /**
+   * Real shadows from the key light, for scenes standing on ground (the Yaka dioramas).
+   * Meshes opt in with castShadow / receiveShadow; finish() fits the shadow camera to them.
+   * Call during build, before the first frame. Returns false on tiers without shadow maps.
+   */
+  enableShadows() {
+    if (!gfx.shadowMap) return false;
+    const r = this.renderer;
+    r.shadowMap.enabled = true;
+    r.shadowMap.type = THREE.PCFShadowMap;      // blurred by shadow.radius; cheaper to compile than PCFSoft
+    r.shadowMap.autoUpdate = false;          // _loop refreshes it every few frames
+    r.shadowMap.needsUpdate = true;
+    const key = this.keyLight;
+    key.castShadow = true;
+    key.intensity *= 1.35;                       // a sunnier key, so the shadows it casts read against the studio fill
+    key.shadow.mapSize.set(gfx.shadowMap, gfx.shadowMap);
+    key.shadow.bias = -0.0004;
+    key.shadow.normalBias = 0.03;
+    key.shadow.radius = 2.5;
+    this._shadows = true;
+    return true;
+  }
+
+  /**
+   * Compile every shader before the first frame, in parallel where the browser allows it
+   * (KHR_parallel_shader_compile). On Windows, WebGL shaders are compiled through Direct3D,
+   * and a cold compile of a lit, shadowed scene froze the page for 3–13 s on the first frame.
+   * Compiling this way keeps the page responsive; the stage says it's preparing meanwhile.
+   */
+  _warmUp() {
+    if (!this.renderer.compileAsync || this._compiling !== undefined) return;
+    // Without the extension compileAsync can only poll a blocking compile (and warns): skip it.
+    if (!this.renderer.extensions.has('KHR_parallel_shader_compile')) { this._compiling = false; return; }
+    this._compiling = true;
+    this.el.classList.add('is-compiling');
+    const done = () => {
+      this._compiling = false;
+      if (this._shadows) this.renderer.shadowMap.needsUpdate = true;
+      this.el.classList.remove('is-compiling');
+    };
+    this.renderer.compileAsync(this.scene, this.camera).then(done, done);
+  }
+
+  /** Aim the key light's shadow camera at everything that casts or receives. */
+  _fitShadows() {
+    const box = new THREE.Box3(), b = new THREE.Box3();
+    this.scene.updateMatrixWorld(true);
+    this.scene.traverse(o => {
+      if (!o.isMesh || !(o.castShadow || o.receiveShadow) || !o.geometry) return;
+      if (o.isInstancedMesh) { o.computeBoundingBox(); box.union(b.copy(o.boundingBox).applyMatrix4(o.matrixWorld)); return; }
+      if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+      box.union(b.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld));
+    });
+    if (box.isEmpty()) return;
+    const s = box.getBoundingSphere(new THREE.Sphere());
+    const key = this.keyLight, dir = key.position.clone().normalize();
+    // Same direction, so the lighting is unchanged; only the shadow frustum moves.
+    key.target.position.copy(s.center);
+    key.position.copy(s.center).addScaledVector(dir, s.radius * 2);
+    this.scene.add(key.target);
+    const cam = key.shadow.camera;
+    cam.left = cam.bottom = -s.radius;
+    cam.right = cam.top = s.radius;
+    cam.near = s.radius * 0.5;
+    cam.far = s.radius * 3.5;
+    cam.updateProjectionMatrix();
+    this.renderer.shadowMap.needsUpdate = true;
+  }
+
+  /**
+   * Make an object respond to the pointer in the 3D view. Only registered objects are
+   * ray-tested (plus any occluders), so this stays cheap whatever else is in the scene.
+   *   hard: true   pressing it never starts an orbit — keys, buttons, small handles
+   *   hard: false  a press-and-release without movement is a click; a drag still orbits
+   * Handlers receive the THREE.Intersection. Returns a function that unregisters it.
+   */
+  interactive(object, { onClick, onDown, onUp, onHover, hard = false, cursor = 'pointer' } = {}) {
+    this._pickInit();
+    const entry = { object, onClick, onDown, onUp, onHover, hard, cursor };
+    this._picks.push(entry);
+    return () => {
+      const i = this._picks.indexOf(entry);
+      if (i >= 0) this._picks.splice(i, 1);
+    };
+  }
+
+  /** Something solid that should block clicks on what is behind it (walls, roofs). */
+  occluder(object) { this._pickInit(); this._occluders.push(object); }
+
+  _pickInit() {
+    if (this._picks) return;
+    this._picks = [];
+    this._occluders = [];
+    const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), canvas = this.renderer.domElement;
+    const shown = (o) => { for (; o; o = o.parent) if (!o.visible) return false; return true; };
+    const pickable = (o) => !o.isSprite && !o.isPoints && !o.isLine && !o.userData.noPick && shown(o);
+
+    const pick = (e) => {
+      const r = canvas.getBoundingClientRect();
+      ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+      ray.setFromCamera(ndc, this.camera);
+      const hits = ray.intersectObjects(this._picks.map(p => p.object), true).filter(h => pickable(h.object));
+      if (!hits.length) return null;
+      const wall = ray.intersectObjects(this._occluders, true).find(h => pickable(h.object));
+      if (wall && wall.distance < hits[0].distance - 0.02) return null;
+      for (let o = hits[0].object; o; o = o.parent) {
+        const entry = this._picks.find(p => p.object === o);
+        if (entry) return { entry, hit: hits[0] };
+      }
+      return null;
+    };
+
+    let hovered = null, raf = 0, lastMove = null;
+    const setHover = (entry, hit) => {
+      if (entry === hovered) return;
+      hovered?.onHover?.(false);
+      hovered = entry;
+      hovered?.onHover?.(true, hit);
+      canvas.style.cursor = entry ? entry.cursor : '';
+    };
+    const onDown = (e) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      const p = pick(e);
+      this._press = p && { ...p, x: e.clientX, y: e.clientY };
+      if (!p?.entry.hard) return;
+      e.stopPropagation();          // capture phase on the container: OrbitControls never sees it
+      e.preventDefault();
+      p.entry.onDown?.(p.hit);
+    };
+    const onUp = (e) => {
+      const pr = this._press;
+      this._press = null;
+      if (!pr) return;
+      if (pr.entry.hard) pr.entry.onUp?.(pr.hit);
+      if (Math.hypot(e.clientX - pr.x, e.clientY - pr.y) > 6) return;
+      const p = pick(e);
+      if (p && p.entry === pr.entry) pr.entry.onClick?.(p.hit);
+    };
+    const onMove = (e) => {
+      if (e.pointerType === 'touch') return;
+      lastMove = e;
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        if (this.disposed) return;
+        if (lastMove.buttons && !this._press?.entry.hard) return;   // orbiting: leave hover alone
+        const p = pick(lastMove);
+        setHover(p?.entry ?? null, p?.hit);
+      });
+    };
+    const onLeave = () => setHover(null);
+    this.el.addEventListener('pointerdown', onDown, { capture: true });
+    this.el.addEventListener('pointermove', onMove);
+    this.el.addEventListener('pointerleave', onLeave);
+    window.addEventListener('pointerup', onUp, true);
+    this._unpick = () => {
+      cancelAnimationFrame(raf);
+      this.el.removeEventListener('pointerdown', onDown, { capture: true });
+      this.el.removeEventListener('pointermove', onMove);
+      this.el.removeEventListener('pointerleave', onLeave);
+      window.removeEventListener('pointerup', onUp, true);
+      canvas.style.cursor = '';
+    };
+  }
+
+  /**
    * Call once the lesson has built its scene. Fits a soft contact-shadow catcher
    * under whatever was added, so floating diagrams sit in a space instead of a void.
    */
   finish() {
+    if (this._shadows) this._fitShadows();
+    this._buildContact();
+    this._warmUp();
+  }
+
+  _buildContact() {
     if (this._contact || this.opts.grid === false) return;
     const box = new THREE.Box3(), b = new THREE.Box3();
     this.scene.updateMatrixWorld(true);
@@ -171,7 +347,10 @@ export class Stage {
     const t = this.clock.elapsedTime;
     for (const fn of this._ticks) { try { fn(dt, t); } catch (e) { console.error(e); } }
     this.controls.update();
+    if (this._compiling) return;               // see _warmUp(): don't block on a cold compile
     if (this._contact && this._frame % gfx.shadowEvery === 0) this._contact.update(this.scene);
+    // After the contact pass, so that pass never re-renders the shadow map.
+    if (this._shadows && this._frame % gfx.shadowEvery === 0) this.renderer.shadowMap.needsUpdate = true;
     this._frame++;
     this.renderer.render(this.scene, this.camera);
     this._monitor(now);
@@ -201,6 +380,7 @@ export class Stage {
   dispose() {
     this.disposed = true;
     cancelAnimationFrame(this._raf);
+    this._unpick?.();
     this._ro.disconnect();
     this.controls.dispose();
     this._contact?.dispose();

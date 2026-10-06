@@ -1,11 +1,13 @@
-import { PAL, THREE, makeLabel, makeFlow, linePath, makeConduit, makeGlow, Timeline } from '../scene.js';
-import { makeMCU, makeCIU, makePole, makeHouse, makeKeyIcon } from '../viz.js';
+import { PAL, THREE, makeLabel, makeFlow, Timeline, easeInOut } from '../scene.js';
+import { makeSite, makeKeyIcon } from '../viz.js';
+import { Store } from '../store.js';
 
 export default {
   id: 'l08', act: 3, num: 8,
   title: 'Inside a Yaka installation',
   subtitle: 'Why the meter is split in two, and why the half that matters is out of reach.',
-  stageOpts: { camera: [1, 2.6, 15], target: [0.5, 1.4, 0], gridY: -2.4, maxDistance: 40 },
+  stageOpts: { camera: [4.4, 4.2, 13.6], target: [-0.6, 0.2, 0], gridY: -2.6, maxDistance: 40, minDistance: 3 },
+  hint: 'Click a part to inspect it · type on the keypad in the house · drag to orbit',
 
   learn: `
     <h3>Yaka and STS</h3>
@@ -42,66 +44,79 @@ export default {
     <p>Use the component buttons in <strong>Controls</strong> to highlight each part, or pull the
     installation apart with <strong>Exploded view</strong>. Try <strong>Open the terminal
     cover</strong> — that is a tamper event, and you will see what the meter does about it.</p>
+    <p>The scene is live, too: click the meter, the keypad or the cable to inspect them, click the
+    terminal cover to open it, and type on the keypad inside the house to send digits up the wire.</p>
   `,
 
   build({ stage, ui }) {
     const tl = new Timeline(stage);
+    stage.enableShadows();
 
-    const pole = makePole(8.5);
-    pole.position.set(-3.6, 0, 0);
-    stage.add(pole);
+    // ── The installation, on its own plot of ground ────────────────────
+    const drn = /^\d{11}$/.test(Store.get('drn')) ? Store.get('drn') : '04122334455';
+    const site = makeSite({ drn });
+    site.group.position.y = stage.floorY + site.ground.thickness;     // the slab stands on the floor
+    stage.add(site.group);
+    site.occluders.forEach(o => stage.occluder(o));
+    const { mcu, ciu, house } = site;
 
-    const mcu = makeMCU();
-    mcu.group.position.set(-3.6, 3.4, 0.55);
-    mcu.group.scale.setScalar(0.85);
-    stage.add(mcu.group);
+    // data rides the mains wiring; power comes down the same cables
+    const plc = makeFlow(site.paths.plc, 22, PAL.violet, 0.05);
+    plc.speed = 0.14;
+    const power = makeFlow(site.paths.supply, 28, PAL.amber, 0.042);
+    power.speed = 0.1;
+    site.group.add(plc.group, power.group);
 
-    const house = makeHouse();
-    house.group.position.set(3.6, -0.3, 0);
-    stage.add(house.group);
+    const tag = (text, pos, opts = {}) => {
+      const l = makeLabel(text, { height: 0.36, color: '#ebe9e4', bg: 'rgba(22,23,26,0.82)', ...opts });
+      l.position.copy(pos);
+      site.group.add(l);
+      return l;
+    };
+    const hp = site.house.group.position;
+    const ciuTag = tag('CIU · keypad by the door', new THREE.Vector3(hp.x - 0.4, 0.85, hp.z + 2.3));
+    const plcPos = new THREE.Vector3(...site.paths.plc(0.8)).add(new THREE.Vector3(0, -0.45, 0.2));
+    const plcLabel = tag('PLC · keypresses up, status down', plcPos, { height: 0.3, color: '#d7c8f0' });
+    const supplyLabel = tag('mains supply', new THREE.Vector3(...site.paths.supply(0.08)).add(new THREE.Vector3(0.75, 0.15, 0.2)),
+      { height: 0.28, color: '#f0c58b' });
 
-    const ciu = makeCIU();
-    ciu.group.position.set(2.6, 0.1, 1.5);
-    ciu.group.scale.setScalar(0.72);
-    stage.add(ciu.group);
-
-    // supply cable, pole → house
-    const supply = makeConduit([-3.4, 2.4, 0.4], [2.4, 0.9, 0.2], PAL.amber);
-    stage.add(supply);
-    const supplyLabel = makeLabel('mains supply', { height: 0.16, mono: true, color: '#f0a04b' });
-    supplyLabel.position.set(-0.6, 2.1, 0.3);
-    stage.add(supplyLabel);
-
-    // PLC / RF link
-    const plc = makeFlow(linePath([-3.3, 2.2, 0.5], [2.4, 0.5, 1.4]), 16, PAL.violet, 0.06);
-    plc.speed = 0.3;
-    stage.add(plc.group);
-    const plcLabel = makeLabel('PLC / RF  ·  keypresses up, status down',
-      { height: 0.17, mono: true, color: '#c7b5e8' });
-    plcLabel.position.set(-0.4, 1.35, 0.9);
-    stage.add(plcLabel);
-
-    // the key, living in the MCU
+    // the Decoder Key, beside the MCU that holds it
     const dk = makeKeyIcon(PAL.green);
-    dk.scale.setScalar(0.42);
-    dk.position.set(-3.75, 3.0, 1.15);
-    stage.add(dk);
-    const dkLabel = makeLabel('Decoder Key · in EEPROM, up here',
-      { height: 0.15, mono: true, color: '#a6dcbc' });
-    dkLabel.position.set(-3.4, 2.55, 1.15);
-    stage.add(dkLabel);
+    const dkBase = site.anchors.mcu.clone().add(new THREE.Vector3(-1.15, 0.35, 0.35));
+    dk.scale.setScalar(0.32);
+    dk.position.copy(dkBase);
+    site.group.add(dk);
+    const dkLabel = tag('Decoder Key · in EEPROM, up here', dkBase.clone().add(new THREE.Vector3(0, -0.45, 0)),
+      { height: 0.26, color: '#a6dcbc' });
 
-    const reachLine = makeConduit([1.2, -2.2, 1.6], [1.2, 2.2, 1.6], PAL.red);
-    reachLine.visible = false;
-    stage.add(reachLine);
+    // what a customer can reach: a translucent boundary between the pole and the house
+    const reach = new THREE.Group();
+    const reachX = site.house.group.position.x - 2.6;
+    const wall = new THREE.Mesh(new THREE.PlaneGeometry(site.ground.depth - 0.6, 3.6), new THREE.MeshBasicMaterial({
+      color: PAL.red, transparent: true, opacity: 0.1, side: THREE.DoubleSide, depthWrite: false
+    }));
+    wall.rotation.y = Math.PI / 2;
+    wall.position.set(reachX, 1.8, 0);
+    wall.userData.noShadow = wall.userData.noFit = true;
+    const edge = new THREE.LineSegments(new THREE.EdgesGeometry(wall.geometry),
+      new THREE.LineDashedMaterial({ color: PAL.red, dashSize: 0.25, gapSize: 0.15, transparent: true, opacity: 0.9 }));
+    edge.rotation.copy(wall.rotation);
+    edge.position.copy(wall.position);
+    edge.computeLineDistances();
+    const reachTag = makeLabel('customer side →', { height: 0.34, color: '#f3b3ae', bg: 'rgba(22,23,26,0.82)' });
+    reachTag.position.set(reachX + 0.9, 3.75, 1.2);
+    reach.add(wall, edge, reachTag);
+    reach.visible = false;
+    site.group.add(reach);
 
     // ── Component explanations ─────────────────────────────────────────
+    const base = { mcu: mcu.group.scale.x, ciu: ciu.group.scale.x, dk: dk.scale.x };
     const PARTS = {
       mcu: {
         label: 'MCU — the meter itself',
         text: 'Holds the cryptographic engine, the Decoder Key in EEPROM, the metering chip and ' +
               'the relay. Sealed, and mounted out of reach.',
-        focus: () => { mcu.group.scale.setScalar(0.98); dk.scale.setScalar(0.5); },
+        focus: () => { mcu.group.scale.setScalar(base.mcu * 1.18); dk.scale.setScalar(base.dk * 1.2); },
         data: {
           'contains': 'crypto engine, EEPROM, metrology IC, relay, tamper sensors',
           'holds the key': 'yes — the Decoder Key never leaves this unit',
@@ -114,7 +129,7 @@ export default {
         label: 'CIU — the keypad indoors',
         text: 'Keypad and display only. No key material, no credit balance, no decisions. ' +
               'It forwards digits to the MCU and shows what the MCU replies.',
-        focus: () => { ciu.group.scale.setScalar(0.85); },
+        focus: () => { ciu.group.scale.setScalar(base.ciu * 1.35); ciuTag.setOpacity(1); },
         data: {
           'contains': 'keypad, LCD, PLC/RF modem',
           'holds the key': 'no',
@@ -127,7 +142,7 @@ export default {
         label: 'PLC / RF link',
         text: 'The two units talk over your own mains wiring (power line communication) or a ' +
               'short-range radio link. Only keypresses and status cross it.',
-        focus: () => { plc.speed = 0.75; plcLabel.material.color.set('#ffffff'); },
+        focus: () => { plc.speed = 0.4; plcLabel.setOpacity(1); },
         data: {
           'carries': 'the 20 digits you typed; balance and status coming back',
           'does NOT carry': 'any key material',
@@ -139,7 +154,7 @@ export default {
         label: 'The relay',
         text: 'A physical switch inside the MCU. Credit runs out, or tamper is detected, and it ' +
               'opens. No software on your side of the wall can close it.',
-        focus: () => { mcu.setLamp('relay', true, 2.4); },
+        focus: () => { mcu.setLamp('relay', true, 2.4); power.speed = 0.3; },
         data: {
           'type': 'latching contactor, inside the sealed MCU',
           'closes when': 'a valid token is accepted and balance > 0',
@@ -151,7 +166,7 @@ export default {
         label: 'The Decoder Key',
         text: 'The 64-bit secret derived in Lesson 7. It is what makes an offline meter able to ' +
               'recognise a genuine token. It is inside the MCU, behind the seal.',
-        focus: () => { dk.scale.setScalar(0.62); },
+        focus: () => { dk.scale.setScalar(base.dk * 1.6); },
         data: {
           'size': '64 bits',
           'where': 'EEPROM inside the MCU',
@@ -162,57 +177,59 @@ export default {
       }
     };
 
+    let tampered = false;
     const resetFocus = () => {
-      mcu.group.scale.setScalar(0.85);
-      ciu.group.scale.setScalar(0.72);
-      dk.scale.setScalar(0.42);
-      plc.speed = 0.3;
-      plcLabel.material.color.set('#ffffff');
-      mcu.setLamp('relay', false);
+      mcu.group.scale.setScalar(base.mcu);
+      ciu.group.scale.setScalar(base.ciu);
+      dk.scale.setScalar(base.dk);
+      plc.speed = 0.14;
+      power.speed = 0.1;
+      if (!tampered) mcu.setLamp('relay', true, 1.6);
+    };
+    const select = (k) => {
+      resetFocus();
+      const p = PARTS[k];
+      p.focus();
+      parts.set(k);
+      rPart.set(`<strong>${p.label}</strong><br>${p.text}`);
+      ui.data(p.data);
     };
 
     // ── Controls ───────────────────────────────────────────────────────
     ui.section('Components');
-    ui.chips({
+    const parts = ui.chips({
       options: [
         { label: 'MCU', value: 'mcu' }, { label: 'CIU', value: 'ciu' },
         { label: 'Link', value: 'link' }, { label: 'Relay', value: 'relay' },
         { label: 'Key', value: 'key' }
       ],
       value: 'mcu',
-      onChange: (k) => {
-        resetFocus();
-        const p = PARTS[k];
-        p.focus();
-        rPart.set(`<strong>${p.label}</strong><br>${p.text}`);
-        ui.data(p.data);
-      }
+      onChange: select
     });
     const rPart = ui.readout('Selected', '—');
+    ui.note('You can also click the parts in the 3D view, and type on the keypad inside the house.');
 
     ui.section('View');
     let exploded = false;
+    const home = { mcu: mcu.group.position.clone(), ciu: ciu.group.position.clone(), roof: house.roof.position.clone() };
     ui.button('Exploded view', (btn) => {
       exploded = !exploded;
       btn.innerHTML = exploded ? 'Reassemble' : 'Exploded view';
-      const targets = exploded
-        ? [[mcu.group, -6.2, 4.4], [ciu.group, 5.4, 0.8], [house.group, 3.6, -1.6]]
-        : [[mcu.group, -3.6, 3.4], [ciu.group, 2.6, 0.1], [house.group, 3.6, -0.3]];
-      const from = targets.map(([o]) => ({ x: o.position.x, y: o.position.y }));
-      tl.run(0.9, (u) => {
-        targets.forEach(([o, x, y], i) => {
-          o.position.x = from[i].x + (x - from[i].x) * u;
-          o.position.y = from[i].y + (y - from[i].y) * u;
-        });
-      });
-      mcu.setCoverOpen(exploded ? 0.8 : 0);
+      const moves = [
+        [mcu.group.position, home.mcu.clone().add(new THREE.Vector3(0, exploded ? 0.25 : 0, exploded ? 1.7 : 0))],
+        [ciu.group.position, home.ciu.clone().add(new THREE.Vector3(0, exploded ? 0.2 : 0, exploded ? 2.9 : 0))],
+        [house.roof.position, home.roof.clone().add(new THREE.Vector3(0, exploded ? 1.5 : 0, 0))]
+      ];
+      const from = moves.map(([p]) => p.clone());
+      tl.run(0.9, (u) => moves.forEach(([p, to], i) => p.lerpVectors(from[i], to, easeInOut(u))));
+      if (!tampered) tl.run(0.6, (u) => mcu.setCoverOpen(exploded ? u * 0.8 : 0.8 * (1 - u)));
     }, { variant: 'ghost' });
 
     ui.button('Show what a customer can reach', (btn) => {
-      reachLine.visible = !reachLine.visible;
-      btn.innerHTML = reachLine.visible ? 'Hide reach line' : 'Show what a customer can reach';
-      if (reachLine.visible) {
-        rPart.set('<strong class="text-danger">Everything to the right of the red line is ' +
+      reach.visible = !reach.visible;
+      btn.innerHTML = reach.visible ? 'Hide the boundary' : 'Show what a customer can reach';
+      if (reach.visible) {
+        rPart.set('<strong class="text-danger">Everything on the house side of the red boundary is ' +
                   'reachable from inside the house.</strong><br>None of it holds a key, a balance, ' +
                   'or the switch.');
         ui.data({
@@ -226,56 +243,91 @@ export default {
 
     ui.section('Tamper');
     let coverOpen = false;
-    ui.button('Open the terminal cover', (btn) => {
+    const coverBtn = ui.button('Open the terminal cover', () => toggleCover(), { variant: 'danger' });
+    const toggleCover = () => {
       coverOpen = !coverOpen;
-      btn.innerHTML = coverOpen ? 'Close the cover' : 'Open the terminal cover';
-      tl.run(0.7, (u) => mcu.setCoverOpen(coverOpen ? u : 1 - u));
+      coverBtn.label(coverOpen ? 'Close the cover' : 'Open the terminal cover');
+      const from = mcu.coverOpen;
+      tl.run(0.7, (u) => mcu.setCoverOpen(from + ((coverOpen ? 1 : 0) - from) * easeInOut(u)));
       if (coverOpen) {
+        tampered = true;
         mcu.setLamp('tamper', true, 2.6);
         mcu.setLamp('relay', false);
         mcu.setScreen('TAMPER');
-        house.setPower(false);
+        site.setPower(false);
+        power.active = false;
         ciu.setScreen('TAMPER');
+        ciu.setLed('ok', false);
+        ciu.setLed('err', true);
         log.add('Cover micro-switch opened → tamper flag set.', 'err');
         log.add('Relay tripped. Supply disconnected.', 'err');
         log.add('Event written to EEPROM with a timestamp.', 'am');
         rPart.set('<strong class="text-danger">Tamper detected.</strong><br>The micro-switch ' +
-                  'under the cover opened. The meter trips its relay immediately and logs the ' +
-                  'event. Only the utility can clear it.');
+                  'under the cover opened and the seal wire broke. The meter trips its relay ' +
+                  'immediately and logs the event. Only the utility can clear it.');
       } else {
         mcu.setLamp('tamper', false);
         mcu.setScreen('TAMPER');
         log.add('Cover closed — but the flag stays set until a utility token clears it.', 'am');
       }
-    }, { variant: 'danger' });
+    };
 
     ui.button('Utility clears the tamper flag', () => {
+      tampered = false;
       mcu.setLamp('tamper', false);
-      mcu.setLamp('relay', true, 1.8);
       mcu.setScreen('12.4 kWh');
-      ciu.setScreen('READY');
-      house.setPower(true);
+      site.setPower(true, 0.85);
+      power.active = true;
+      ciu.setScreen('12.4 kWh');
+      ciu.setLed('err', false);
+      ciu.setLed('ok', true);
       log.add('Tamper cleared by the utility. Relay closed.', 'ok');
     }, { variant: 'ghost' });
 
     ui.section('Log');
     const log = ui.log();
 
+    // ── Clicking the scene ──────────────────────────────────────────────
+    stage.interactive(mcu.group, { onClick: () => select('mcu') });
+    stage.interactive(mcu.cover, { onClick: () => toggleCover() });
+    stage.interactive(ciu.body, { onClick: () => select('ciu') });
+    stage.interactive(site.cables.service.mesh, { onClick: () => select('link') });
+    stage.interactive(dk, { onClick: () => select('key') });
+
+    // Typing on the keypad: the digits travel to the MCU over the house wiring.
+    ciu.enableInput(stage, {
+      onEnter: (entry) => {
+        if (entry.length < 20) {
+          ciu.setScreen('INCOMPLETE');
+          log.add(`The keypad needs all 20 digits — ${entry.length} typed.`, 'am');
+          return;
+        }
+        ciu.setScreen('SENT');
+        plc.speed = 0.9;
+        log.add(`${entry.replace(/(.{4})/g, '$1 ').trim()} → sent to the MCU over the PLC link.`, 'cy');
+        log.add('Checking those digits is the MCU’s job — that is Lesson 10.', '');
+        tl.run(1.6, null, () => {
+          plc.speed = 0.14;
+          mcu.setScreen('TOKEN?');
+          ciu.setScreen('SEE LESSON 10');
+          tl.run(1.6, null, () => { mcu.setScreen(tampered ? 'TAMPER' : '12.4 kWh'); ciu.setScreen(tampered ? 'TAMPER' : '12.4 kWh'); });
+        });
+      }
+    });
+
     stage.onTick((dt, t) => {
-      mcu.tick(dt, t);
-      ciu.tick(dt, t);
+      site.tick(dt, t);
       plc.tick(dt);
+      power.tick(dt);
       dk.userData.tick(dt, t);
     });
 
     // initial state
     mcu.setScreen('12.4 kWh');
-    mcu.setLamp('relay', true, 1.6);
-    house.setPower(true, 0.85);
-    ciu.setScreen('READY');
-    PARTS.mcu.focus();
-    rPart.set(`<strong>${PARTS.mcu.label}</strong><br>${PARTS.mcu.text}`);
-    ui.data(PARTS.mcu.data);
+    site.setPower(true, 0.85);
+    ciu.setScreen('12.4 kWh');
+    ciu.setLed('ok', true);
+    select('mcu');
     log.add('Installation energised. Relay closed, 12.4 kWh remaining.', 'ok');
   }
 };

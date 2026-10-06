@@ -3,15 +3,91 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Crypto Lab — How twenty digits switch your lights on</title>
+<title>Learn encryption through the Yaka prepaid meter — Crypto Lab</title>
 <script>
   // The lessons used to live at index.html#l01…#l12. Keep those links (and ?debug / ?quality) working.
   if (/^#l\d{2}$/.test(location.hash)) location.replace('lab.html' + location.search + location.hash);
 </script>
-<meta name="description" content="Twelve hands-on lessons on encryption — ciphers, keys, hashes and signatures — ending with how Uganda's Yaka prepaid meter checks a token with no network at all. Try a working meter keypad on this page.">
+<meta name="description" content="Free interactive lessons on encryption — ciphers, keys, hashes and signatures — ending with how Uganda's Yaka prepaid meter checks a 20-digit token offline.">
+<meta name="author" content="Expedicto Walugembe">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="./">
 <meta name="theme-color" content="#f6f4ef">
 <meta name="color-scheme" content="light">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231d1c19'/%3E%3Cpath d='M11 15v-3a5 5 0 0 1 10 0v3' fill='none' stroke='%23f6f4ef' stroke-width='2.4'/%3E%3Crect x='8.5' y='14.5' width='15' height='10' rx='1.8' fill='%23e8590c'/%3E%3C/svg%3E">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+<!-- Link previews (WhatsApp, Facebook, LinkedIn, X). Crawlers need absolute URLs:
+     when the site has its public address, put it in front of og:image / og:url. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Crypto Lab">
+<meta property="og:title" content="How twenty digits switch your lights on — Crypto Lab">
+<meta property="og:description" content="Twelve hands-on lessons on encryption, ending with how Uganda's Yaka prepaid meter decides a token is genuine with no network. Try a working meter keypad.">
+<meta property="og:image" content="og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A prepaid meter keypad reading ENTER TOKEN beside the headline: How twenty digits switch your lights on.">
+<meta property="og:locale" content="en_GB">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How twenty digits switch your lights on — Crypto Lab">
+<meta name="twitter:description" content="Hands-on lessons on encryption, ending with how Uganda's Yaka prepaid meter checks a token offline.">
+<meta name="twitter:image" content="og-image.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": "#author",
+      "name": "Expedicto Walugembe"
+    },
+    {
+      "@type": "WebSite",
+      "@id": "#website",
+      "name": "Crypto Lab",
+      "inLanguage": "en",
+      "author": { "@id": "#author" }
+    },
+    {
+      "@type": "Course",
+      "@id": "#course",
+      "name": "Crypto Lab: from ciphers to the Yaka meter",
+      "description": "Twelve interactive lessons on encryption — ciphers, shared keys, block ciphers, hashing, public keys, digital signatures and key derivation — ending with how Uganda's Yaka prepaid electricity meter validates a 20-digit STS token offline.",
+      "inLanguage": "en",
+      "isAccessibleForFree": true,
+      "educationalLevel": "Beginner",
+      "learningResourceType": "Interactive lesson",
+      "teaches": ["Encryption", "Symmetric-key cryptography", "Block ciphers", "Cryptographic hashing",
+                  "Public-key cryptography", "Digital signatures", "Key derivation",
+                  "STS prepaid electricity tokens", "Replay protection"],
+      "author": { "@id": "#author" },
+      "creator": { "@id": "#author" },
+      "provider": { "@id": "#author" },
+      "hasCourseInstance": { "@type": "CourseInstance", "courseMode": "Online", "inLanguage": "en" },
+      "syllabusSections": [
+        { "@type": "Syllabus", "name": "Act I — Foundations", "description": "What a key does, how a block cipher scrambles everything at once, and how a hash fingerprints data." },
+        { "@type": "Syllabus", "name": "Act II — Two keys", "description": "Public keys, digital signatures, and deriving a key instead of sending it." },
+        { "@type": "Syllabus", "name": "Act III — The Yaka meter", "description": "The meter on the pole and the keypad by the door: how a token is built, checked and refused, and the 2024 TID rollover." }
+      ],
+      "hasPart": [
+        { "@type": "LearningResource", "position": 1,  "name": "What encryption actually is" },
+        { "@type": "LearningResource", "position": 2,  "name": "One shared key" },
+        { "@type": "LearningResource", "position": 3,  "name": "Inside a block cipher" },
+        { "@type": "LearningResource", "position": 4,  "name": "Hashing: the one-way door" },
+        { "@type": "LearningResource", "position": 5,  "name": "Two keys instead of one" },
+        { "@type": "LearningResource", "position": 6,  "name": "Digital signatures" },
+        { "@type": "LearningResource", "position": 7,  "name": "Deriving a key instead of sending one" },
+        { "@type": "LearningResource", "position": 8,  "name": "Inside a Yaka installation" },
+        { "@type": "LearningResource", "position": 9,  "name": "Building a token" },
+        { "@type": "LearningResource", "position": 10, "name": "The meter decides" },
+        { "@type": "LearningResource", "position": 11, "name": "Re-keying, rollover and tamper" },
+        { "@type": "LearningResource", "position": 12, "name": "The whole thing, running" }
+      ]
+    }
+  ]
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap">
@@ -289,8 +365,9 @@
 
 <footer class="site-foot">
   <div class="container-xl site-foot-inner">
-    <p><strong>Crypto Lab</strong> — an educational model of encryption and prepaid metering.
-    Not affiliated with any utility or with the STS Association.</p>
+    <p><strong>Crypto Lab</strong> — designed and built by <strong>Expedicto Walugembe</strong>.
+    An educational model of encryption and prepaid metering, not affiliated with any utility or
+    with the STS Association.</p>
     <p><a href="#course">Lessons</a> · <a href="lab.html#l01">Open the lab</a></p>
   </div>
 </footer>

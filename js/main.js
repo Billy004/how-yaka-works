@@ -89,6 +89,10 @@ function refreshNav(id) {
   $('#nextBtn').setAttribute('aria-label', next ? `Next lesson: ${next.title}` : 'Course complete. Back to lesson 1');
 
   document.title = `${def.num}. ${def.title} — Crypto Lab`;
+  // Search engines render this page with JavaScript, so give each lesson its own summary.
+  document.querySelector('meta[name="description"]')?.setAttribute('content',
+    `Lesson ${def.num} of ${LESSONS.length}: ${def.subtitle} An interactive 3D lesson from Crypto Lab, ` +
+    `a course on encryption and Uganda's Yaka prepaid meter.`);
 }
 
 // Bootstrap's Offcanvas brings the backdrop, focus trap, Escape and focus return.
@@ -156,9 +160,10 @@ function linkTabMentions(root) {
 /* ── Stage chrome ──────────────────────────────────────────────────────── */
 const resetBtn = $('#resetView');
 const hint = $('#stageHint');
-hint.textContent = matchMedia('(pointer: coarse)').matches
+const ORBIT_HINT = matchMedia('(pointer: coarse)').matches
   ? 'Drag to rotate · pinch to zoom'
   : 'Drag to orbit · scroll to zoom · right-drag to pan';
+hint.textContent = ORBIT_HINT;
 let hasOrbited = false;   // once someone has used the camera, stop telling them how
 
 resetBtn.addEventListener('click', () => {
@@ -194,7 +199,12 @@ function load(id) {
   panelBody.scrollTop = 0;
   tabByName('controls').classList.add('unseen');
   resetBtn.hidden = true;
-  hint.classList.toggle('done', hasOrbited);
+  // A lesson with things to click in 3D says so, even to someone who has already orbited.
+  const coarse = matchMedia('(pointer: coarse)').matches;
+  hint.textContent = def.hint
+    ? (coarse ? def.hint.replace(/\bClick\b/g, 'Tap').replace('drag to orbit', 'drag to rotate') : def.hint)
+    : ORBIT_HINT;
+  hint.classList.toggle('done', !def.hint && hasOrbited);
 
   let stage;
   try {
@@ -268,7 +278,8 @@ document.addEventListener('keydown', (e) => {
 // 3D labels are painted onto canvases once, so wait (briefly) for the web fonts;
 // otherwise the first lesson's labels would be stuck in the fallback face.
 await Promise.race([
-  Promise.all(['600 16px "IBM Plex Sans"', '600 16px "IBM Plex Mono"'].map(f => document.fonts?.load(f))),
+  Promise.all(['600 16px "IBM Plex Sans"', '600 16px "IBM Plex Mono"', '500 16px "IBM Plex Sans"',
+               '400 16px "IBM Plex Mono"', '500 16px "IBM Plex Mono"', '600 16px "Source Serif 4"'].map(f => document.fonts?.load(f))),
   new Promise(r => setTimeout(r, 2500))
 ]).catch(() => {});
 

@@ -13,6 +13,7 @@ export default {
   title: 'Re-keying, rollover and tamper',
   subtitle: 'Changing a meter\'s key through its keypad — and the day the world\'s TID counter ran out.',
   stageOpts: { camera: [0, 1.2, 14.5], target: [0, 0.4, 0], gridY: -4.0, maxDistance: 32 },
+  hint: 'Click the meter’s terminal cover to tamper with it · drag to orbit',
 
   learn: `
     <h3>Changing a key you cannot reach</h3>
@@ -77,13 +78,13 @@ export default {
     let pair = null;
 
     // ── Scene ──────────────────────────────────────────────────────────
-    const mcu = makeMCU();
-    mcu.group.position.set(4.8, 0.9, 0);
-    mcu.group.scale.setScalar(0.88);
+    const mcu = makeMCU({ drn: /^\d{11}$/.test(Store.get('drn')) ? Store.get('drn') : '04122334455' });
+    mcu.group.position.set(4.9, 0.85, 0);
+    mcu.group.scale.setScalar(0.86);
     stage.add(mcu.group);
 
     const dk = makeKeyIcon(PAL.green, 'KRN 1');
-    dk.position.set(4.4, 0.55, 1.0);
+    dk.position.set(3.45, 1.55, 0.6);
     dk.scale.setScalar(0.6);
     stage.add(dk);
 
@@ -308,12 +309,7 @@ export default {
 
     ui.section('Tamper sensors');
     ui.buttonRow([
-      { label: 'Open cover', variant: 'danger', onClick: () => {
-          meter.trip('cover');
-          tl.run(0.6, (u) => mcu.setCoverOpen(u));
-          log.add('Cover micro-switch → tamper. Relay tripped.', 'err');
-          syncMeter();
-        } },
+      { label: 'Open cover', variant: 'danger', onClick: () => openCover() },
       { label: 'Magnet', variant: 'danger', onClick: () => {
           meter.trip('magnet');
           log.add('Hall-effect sensor saw a strong field → tamper. Relay tripped.', 'err');
@@ -328,12 +324,22 @@ export default {
     ui.button('Utility issues a clear-tamper token', () => {
       const t = buildCreditToken({ tid: issueTid(), units: 0, dk: meter.dk, sub: 2 });
       enter(t.digits, 'Clear-tamper token');
-      tl.run(0.6, (u) => mcu.setCoverOpen(1 - u));
+      const from = mcu.coverOpen;
+      if (from > 0) tl.run(0.6, (u) => mcu.setCoverOpen(from * (1 - u)));
       meter.relay = meter.balanceKwh > 0;
       syncMeter();
     }, { variant: 'ghost' });
     ui.note('A tampered meter refuses ordinary credit until the flag is cleared — which only the ' +
-            'utility can do, because only the utility can build a token this meter will accept.');
+            'utility can do, because only the utility can build a token this meter will accept. ' +
+            'You can also click the terminal cover on the meter.');
+
+    function openCover() {
+      meter.trip('cover');
+      if (mcu.coverOpen < 0.5) tl.run(0.6, (u) => mcu.setCoverOpen(u));
+      log.add('Cover micro-switch → tamper. Relay tripped.', 'err');
+      syncMeter();
+    }
+    stage.interactive(mcu.cover, { onClick: openCover });
 
     ui.section('Log');
     const log = ui.log();

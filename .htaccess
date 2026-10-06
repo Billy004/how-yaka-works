@@ -7,3 +7,10 @@
     Header set Cache-Control "no-cache"
   </FilesMatch>
 </IfModule>
+
+# Keep the repository and project notes off the web. Without this, anyone can download
+# the full source history from .git/ and read the working notes and package.json.
+<IfModule mod_alias.c>
+  RedirectMatch 404 "/\.(git|svn|hg)(/|$)"
+  RedirectMatch 404 "/(package(-lock)?\.json|[^/]+\.md)$"
+</IfModule>
